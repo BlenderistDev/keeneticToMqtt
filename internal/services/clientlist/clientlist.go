@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"keeneticToMqtt/internal/dto"
+	"keeneticToMqtt/internal/dto/keeneticdto"
 )
 
 type listClient interface {
-	GetDeviceList() ([]*dto.KeeneticDeviceInfo, error)
-	GetPolicyList() ([]*dto.KeeneticDevicePolicy, error)
+	GetDeviceList() ([]*keeneticdto.DeviceInfoResponse, error)
+	GetClientPolicyList() ([]*keeneticdto.DevicePolicy, error)
 }
 
 type ClientList struct {
@@ -26,12 +27,12 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ClientList client error while getting device list: %w", err)
 	}
-	policyList, err := l.listClient.GetPolicyList()
+	policyList, err := l.listClient.GetClientPolicyList()
 	if err != nil {
 		return nil, fmt.Errorf("ClientList client error while getting policy list: %w", err)
 	}
 
-	policyMap := make(map[string]*dto.KeeneticDevicePolicy, len(policyList))
+	policyMap := make(map[string]*keeneticdto.DevicePolicy, len(policyList))
 	for _, policy := range policyList {
 		policyMap[policy.Mac] = policy
 	}
