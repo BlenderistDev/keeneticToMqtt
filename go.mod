@@ -1,0 +1,3 @@
+module keeneticToMqtt
+
+go 1.22.0
