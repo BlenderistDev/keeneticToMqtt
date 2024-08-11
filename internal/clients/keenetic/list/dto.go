@@ -46,3 +46,10 @@ type TrafficShape struct {
 	Mode     string `json:"mode"`
 	Schedule string `json:"schedule"`
 }
+
+type DevicePolicy struct {
+	Mac      string `json:"mac"`
+	Access   string `json:"access"`
+	Permit   bool   `json:"permit"`
+	Priority int    `json:"priority"`
+}
