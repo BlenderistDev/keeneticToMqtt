@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"keeneticToMqtt/internal/clients/keenetic/auth"
+	"keeneticToMqtt/internal/dto"
 )
 
 type client interface {
@@ -27,7 +28,7 @@ func NewList(host string, client client) *List {
 	}
 }
 
-func (l *List) GetDeviceList() ([]*DeviceInfo, error) {
+func (l *List) GetDeviceList() ([]*dto.KeeneticDeviceInfo, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+"/rci/show/ip/hotspot/host", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request error in GetDeviceList request: %w", err)
@@ -53,7 +54,7 @@ func (l *List) GetDeviceList() ([]*DeviceInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read response body error in GetDeviceList request: %w", err)
 	}
-	var res []*DeviceInfo
+	var res []*dto.KeeneticDeviceInfo
 
 	if err := json.Unmarshal(resBytes, &res); err != nil {
 		return nil, fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
@@ -62,7 +63,7 @@ func (l *List) GetDeviceList() ([]*DeviceInfo, error) {
 	return res, nil
 }
 
-func (l *List) GetPolicyList() ([]*DevicePolicy, error) {
+func (l *List) GetPolicyList() ([]*dto.KeeneticDevicePolicy, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+"/rci/show/rc/ip/hotspot/host", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request error in GetDeviceList request: %w", err)
@@ -88,7 +89,7 @@ func (l *List) GetPolicyList() ([]*DevicePolicy, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read response body error in GetDeviceList request: %w", err)
 	}
-	var res []*DevicePolicy
+	var res []*dto.KeeneticDevicePolicy
 
 	if err := json.Unmarshal(resBytes, &res); err != nil {
 		return nil, fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
