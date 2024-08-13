@@ -1,0 +1,12 @@
+keenetic:
+  host: 192.168.0.1
+  login: login
+  password: password
+mqtt:
+  host: mqtt://localhost:1883
+  login: login
+  password: password
+  clientId: keeneticToMqtt
+  baseTopic: keeneticToMqtt
+homeassistant:
+  updateInterval: 10s
