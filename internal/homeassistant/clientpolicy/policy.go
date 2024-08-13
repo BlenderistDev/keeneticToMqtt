@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 
-	discoverycilient "keeneticToMqtt/internal/clients/discovery"
 	"keeneticToMqtt/internal/clients/keenetic/policy"
 	"keeneticToMqtt/internal/clients/mqtt"
 	"keeneticToMqtt/internal/dto"
+	discoverycilient "keeneticToMqtt/internal/services/discovery"
 	policy2 "keeneticToMqtt/internal/storages/policy"
 )
 
