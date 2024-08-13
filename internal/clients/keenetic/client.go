@@ -2,6 +2,9 @@ package keenetic
 
 import (
 	"net/http"
+	"net/http/cookiejar"
+
+	"keeneticToMqtt/internal/clients/keenetic/auth"
 )
 
 type Keenetic struct {
@@ -9,24 +12,24 @@ type Keenetic struct {
 	client                *http.Client
 }
 
-func NewKeenetic(host, login, password string) *Keenetic {
+func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, password string) *Keenetic {
 	keenetic := &Keenetic{
 		host:     host,
 		login:    login,
 		password: password,
 	}
 
-	cookieStorage := &cookieStorage{}
 	t := &http.Transport{}
 
 	var rt http.RoundTripper
-	rt = cookieRoundTripper{
-		proxied:       t,
-		cookieStorage: cookieStorage,
+	rt = &AuthRoundTripper{
+		proxied: t,
+		auth:    auth,
 	}
 
 	client := &http.Client{
 		Transport: rt,
+		Jar:       cookiejar,
 	}
 
 	keenetic.client = client
@@ -35,8 +38,4 @@ func NewKeenetic(host, login, password string) *Keenetic {
 
 func (k *Keenetic) Do(req *http.Request) (*http.Response, error) {
 	return k.client.Do(req)
-}
-
-func (k *Keenetic) GetHost() string {
-	return k.host
 }

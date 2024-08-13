@@ -9,11 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/cookiejar"
 )
-
-type client interface {
-	Do(req *http.Request) (*http.Response, error)
-}
 
 var (
 	ErrUnauthorized = errors.New("unauthorized")
@@ -21,19 +18,34 @@ var (
 
 type Auth struct {
 	login, password, host string
-	client                client
+	cookiejar             *cookiejar.Jar
+	client                *http.Client
 }
 
-func NewAuth(host, login, password string, client client) *Auth {
+func NewAuth(host, login, password string, cookiejar *cookiejar.Jar) *Auth {
 	return &Auth{
 		login:    login,
 		password: password,
 		host:     host,
-		client:   client,
+		client:   &http.Client{Jar: cookiejar},
 	}
 }
 
-func (a *Auth) CheckAuth() (realm, challenge string, err error) {
+func (a *Auth) RefreshAuth() error {
+	realm, challenge, err := a.checkAuth()
+	switch {
+	case errors.Is(err, ErrUnauthorized):
+		if err := a.auth(realm, challenge); err != nil {
+			return fmt.Errorf("error while keenetic auth: %w", err)
+		}
+	case err != nil:
+		return fmt.Errorf("error while keenetic check auth: %w", err)
+	}
+
+	return nil
+}
+
+func (a *Auth) checkAuth() (realm, challenge string, err error) {
 	req, err := http.NewRequest(http.MethodGet, a.host+"/auth", nil)
 	if err != nil {
 		err = fmt.Errorf("build request error in checkauth request: %w", err)
@@ -67,7 +79,7 @@ type authRequest struct {
 	Password string `json:"password"`
 }
 
-func (a *Auth) Auth(realm, challenge string) error {
+func (a *Auth) auth(realm, challenge string) error {
 	hashMd5 := md5.Sum([]byte(a.login + ":" + realm + ":" + a.password))
 	hashMd5Str := hex.EncodeToString(hashMd5[:])
 
