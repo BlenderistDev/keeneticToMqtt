@@ -14,10 +14,11 @@ type Storage struct {
 	logger          *slog.Logger
 }
 
-func NewStorage(policyClient *policy.Policy, refreshInterval time.Duration) *Storage {
+func NewStorage(policyClient *policy.Policy, refreshInterval time.Duration, logger *slog.Logger) *Storage {
 	s := &Storage{
 		policyClient:    policyClient,
 		refreshInterval: refreshInterval,
+		logger:          logger,
 	}
 
 	s.refresh()
@@ -46,6 +47,7 @@ func (s *Storage) refresh() {
 	resp, err := s.policyClient.GetPolicyList()
 	if err != nil {
 		s.logger.Error("error while refresh policies storage", "error", err)
+		return
 	}
 	policies := make([]string, 0, len(resp))
 	for k := range resp {
