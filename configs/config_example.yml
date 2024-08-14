@@ -10,3 +10,4 @@ mqtt:
   baseTopic: keeneticToMqtt
 homeassistant:
   updateInterval: 10s
+  whitelist:

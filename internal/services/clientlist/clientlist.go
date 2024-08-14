@@ -13,12 +13,18 @@ type listClient interface {
 }
 
 type ClientList struct {
-	listClient listClient
+	listClient   listClient
+	macWhiteList map[string]bool
 }
 
-func NewClientList(listClient listClient) *ClientList {
+func NewClientList(listClient listClient, macWhiteList []string) *ClientList {
+	macMap := make(map[string]bool, len(macWhiteList))
+	for _, mac := range macWhiteList {
+		macMap[mac] = true
+	}
 	return &ClientList{
-		listClient: listClient,
+		listClient:   listClient,
+		macWhiteList: macMap,
 	}
 }
 
@@ -37,16 +43,21 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 		policyMap[policy.Mac] = policy
 	}
 
-	clientList := make([]dto.Client, len(deviceList))
-	for i, device := range deviceList {
-		clientList[i] = dto.Client{
+	clientList := make([]dto.Client, 0)
+	for _, device := range deviceList {
+		if !l.macWhiteList[device.Mac] {
+			continue
+		}
+		client := dto.Client{
 			Mac:  device.Mac,
 			Name: device.Name,
 		}
+
 		policy := policyMap[device.Mac]
 		if policy != nil && policy.Policy != nil {
-			clientList[i].Policy = *policy.Policy
+			client.Policy = *policy.Policy
 		}
+		clientList = append(clientList, client)
 	}
 
 	return clientList, nil

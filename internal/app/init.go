@@ -47,7 +47,7 @@ func NewContainer() (*Container, error) {
 
 	policyStorage := policy2.NewStorage(policyClient, time.Second*10, cont.Logger)
 
-	cont.ClientListService = clientlist.NewClientList(listClient)
+	cont.ClientListService = clientlist.NewClientList(listClient, cont.Config.Homeassistant.WhiteList)
 	cont.DiscoveryService = discovery.NewDiscovery("", mqttClient)
 
 	clientPolicy := clientpolicy.NewClientPolicy(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, mqttClient, policyClient, policyStorage, cont.Logger)
