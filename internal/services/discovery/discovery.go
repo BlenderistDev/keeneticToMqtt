@@ -63,6 +63,31 @@ func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, deviceName, na
 	return nil
 }
 
+func (d *Discovery) SendDiscoverySwitch(commandTopic, stateTopic, deviceName, name string) error {
+	config := struct {
+		CommandTopic string `json:"command_topic"`
+		StateTopic   string `json:"state_topic"`
+		Name         string `json:"name"`
+		Device       Device
+	}{
+		CommandTopic: commandTopic,
+		StateTopic:   stateTopic,
+		Name:         name,
+		Device: Device{
+			Manufacturer: "BlenderistDev keeneticToMqtt",
+			Name:         deviceName,
+		},
+	}
+
+	configStr, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("error while marshal select discovery config: %w", err)
+	}
+	d.SendDiscovery("switch", d.deviceID+name, string(configStr))
+
+	return nil
+}
+
 func (d *Discovery) SendDiscovery(component, deviceID, config string) {
 	d.mqtt.SendMessage(
 		d.buildDiscoveryTopic(component, deviceID),

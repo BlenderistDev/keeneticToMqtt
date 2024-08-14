@@ -1,6 +1,7 @@
 package keenetic
 
 import (
+	"log/slog"
 	"net/http"
 	"net/http/cookiejar"
 
@@ -12,7 +13,7 @@ type Keenetic struct {
 	client                *http.Client
 }
 
-func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, password string) *Keenetic {
+func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, password string, log *slog.Logger) *Keenetic {
 	keenetic := &Keenetic{
 		host:     host,
 		login:    login,
@@ -26,6 +27,11 @@ func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, passwor
 		proxied: t,
 		auth:    auth,
 	}
+	//rt = &logger.RoundTripper{
+	//	Proxied:    rt,
+	//	Log:        log,
+	//	ClientName: "keenetic",
+	//}
 
 	client := &http.Client{
 		Transport: rt,

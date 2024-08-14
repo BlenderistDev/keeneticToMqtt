@@ -55,11 +55,17 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 		}
 
 		policy := policyMap[device.Mac]
+		if policy == nil {
+			continue
+		}
 		if policy != nil && policy.Policy != nil && *policy.Policy != "" {
 			client.Policy = *policy.Policy
 		} else {
 			client.Policy = homeassistantdto.NonePolicy
 		}
+
+		client.Permit = policy.Permit
+
 		clientList = append(clientList, client)
 	}
 

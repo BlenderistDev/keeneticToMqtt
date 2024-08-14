@@ -51,6 +51,7 @@ func (c *Client) SendMessage(topic, message string) {
 func (c *Client) Subscribe(topic string) chan string {
 	ch := make(chan string)
 	c.client.Subscribe(topic, 0, func(client mqtt.Client, message mqtt.Message) {
+		fmt.Println(topic, message)
 		ch <- string(message.Payload())
 	})
 

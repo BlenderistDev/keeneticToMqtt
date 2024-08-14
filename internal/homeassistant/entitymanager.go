@@ -48,21 +48,26 @@ func (m *EntityManager) update() error {
 	}
 
 	for _, client := range clients {
-		for _, entity := range m.entities {
-			_, ok := m.clients[client.Mac]
-			if !ok {
-				go entity.RunConsumer(client.Mac)
+
+		_, ok := m.clients[client.Mac]
+		if !ok {
+			for _, entity := range m.entities {
+				e := entity
+				go e.RunConsumer(client.Mac)
 				go func() {
-					if err := entity.SendDiscoveryMessage(client.Mac, client.Name); err != nil {
+					if err := e.SendDiscoveryMessage(client.Mac, client.Name); err != nil {
 						m.logger.Error("Entity manager update error while sending discovery message",
 							"error", err,
 							"client", client,
-							"Entity", fmt.Sprintf("%v", entity),
+							"Entity", fmt.Sprintf("%v", e),
 						)
 					}
 				}()
 			}
-			m.clients[client.Mac] = client
+		}
+		m.clients[client.Mac] = client
+		for _, entity := range m.entities {
+
 			entity.SendState(client)
 		}
 

@@ -4,18 +4,18 @@ import (
 	"log/slog"
 	"time"
 
-	"keeneticToMqtt/internal/clients/keenetic/policy"
+	"keeneticToMqtt/internal/clients/keenetic/policylist"
 	"keeneticToMqtt/internal/dto/homeassistantdto"
 )
 
 type Storage struct {
-	policyClient    *policy.Policy
+	policyClient    *policylist.PolicyList
 	refreshInterval time.Duration
 	policies        []string
 	logger          *slog.Logger
 }
 
-func NewStorage(policyClient *policy.Policy, refreshInterval time.Duration, logger *slog.Logger) *Storage {
+func NewStorage(policyClient *policylist.PolicyList, refreshInterval time.Duration, logger *slog.Logger) *Storage {
 	s := &Storage{
 		policyClient:    policyClient,
 		refreshInterval: refreshInterval,
