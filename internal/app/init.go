@@ -53,7 +53,9 @@ func NewContainer() (*Container, error) {
 	clientPolicy := clientpolicy.NewClientPolicy(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, mqttClient, policyClient, policyStorage, cont.Logger)
 
 	cont.EntityManager = homeassistant.NewEntityManager(
-		clientPolicy,
+		[]homeassistant.Entity{
+			clientPolicy,
+		},
 		cont.ClientListService,
 		cont.Config.Homeassistant.UpdateInterval,
 		cont.Logger,

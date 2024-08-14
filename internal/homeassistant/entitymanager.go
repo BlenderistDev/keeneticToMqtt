@@ -6,12 +6,17 @@ import (
 	"time"
 
 	"keeneticToMqtt/internal/dto"
-	"keeneticToMqtt/internal/homeassistant/clientpolicy"
 	"keeneticToMqtt/internal/services/clientlist"
 )
 
+type Entity interface {
+	RunConsumer(mac string)
+	SendDiscoveryMessage(mac, name string) error
+	SendState(client dto.Client)
+}
+
 type EntityManager struct {
-	clientPolicy    *clientpolicy.ClientPolicy
+	entities        []Entity
 	clientList      *clientlist.ClientList
 	pollingInterval time.Duration
 	logger          *slog.Logger
@@ -19,13 +24,13 @@ type EntityManager struct {
 }
 
 func NewEntityManager(
-	policy *clientpolicy.ClientPolicy,
+	entities []Entity,
 	clientList *clientlist.ClientList,
 	pollingInterval time.Duration,
 	logger *slog.Logger,
 ) *EntityManager {
 	return &EntityManager{
-		clientPolicy:    policy,
+		entities:        entities,
 		clientList:      clientList,
 		pollingInterval: pollingInterval,
 		logger:          logger,
@@ -36,24 +41,31 @@ func NewEntityManager(
 func (m *EntityManager) update() error {
 	clients, err := m.clientList.GetClientList()
 
-	m.logger.Info("entity manager update", "clients", clients)
+	m.logger.Info("Entity manager update", "clients", clients)
 
 	if err != nil {
 		return fmt.Errorf("error while get clieent list update: %s", err.Error())
 	}
 
 	for _, client := range clients {
-		_, ok := m.clients[client.Mac]
-		if !ok {
-			go m.clientPolicy.RunConsumer(client.Mac)
-			go func() {
-				if err := m.clientPolicy.SendDiscoveryMessage(client.Mac, client.Name); err != nil {
-					m.logger.Error("entity manager update error while sending discovery message", "error", err, "client", client)
-				}
-			}()
+		for _, entity := range m.entities {
+			_, ok := m.clients[client.Mac]
+			if !ok {
+				go entity.RunConsumer(client.Mac)
+				go func() {
+					if err := entity.SendDiscoveryMessage(client.Mac, client.Name); err != nil {
+						m.logger.Error("Entity manager update error while sending discovery message",
+							"error", err,
+							"client", client,
+							"Entity", fmt.Sprintf("%v", entity),
+						)
+					}
+				}()
+			}
+			m.clients[client.Mac] = client
+			entity.SendState(client)
 		}
-		m.clients[client.Mac] = client
-		m.clientPolicy.SendState(client)
+
 	}
 
 	return nil
