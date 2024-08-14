@@ -32,9 +32,7 @@ type (
 		Status []responseStatus `json:"status"`
 	}
 
-	response struct {
-		Policy responseClient `json:"policy"`
-	}
+	response map[string]responseClient
 )
 
 func NewAccessUpdate(host string, client client) *AccessUpdate {
@@ -120,7 +118,7 @@ func (p *AccessUpdate) ipHotspotHostRequest(body interface{}) error {
 		return fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
 	}
 
-	if len(res.Policy.Status) == 0 {
+	if len(res) == 0 {
 		return fmt.Errorf("no status in setpolicy response: %w", err)
 	}
 
