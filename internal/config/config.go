@@ -33,6 +33,7 @@ type Mqtt struct {
 type HomeAssistant struct {
 	UpdateInterval time.Duration `mapstructure:"updateInterval"`
 	WhiteList      []string      `mapstructure:"whitelist"`
+	DeviceID       string        `mapstructure:"deviceid"`
 }
 
 func SetConfigFile(path string) {

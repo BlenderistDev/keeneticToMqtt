@@ -3,6 +3,7 @@ package clientpolicy
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"keeneticToMqtt/internal/clients/keenetic/policy"
 	"keeneticToMqtt/internal/clients/mqtt"
@@ -43,12 +44,12 @@ func NewClientPolicy(
 	}
 }
 
-func (p *ClientPolicy) SendDiscoveryMessage(mac string) error {
+func (p *ClientPolicy) SendDiscoveryMessage(mac, name string) error {
 	commandTopic := p.getCommandTopic(mac)
 	stateTopic := p.getStateTopic(mac)
 	policies := p.policyStorage.GetPolicyList()
 
-	if err := p.discoveryClient.SendDiscoverySelect(commandTopic, stateTopic, mac, entityTypeName, policies); err != nil {
+	if err := p.discoveryClient.SendDiscoverySelect(commandTopic, stateTopic, name, name+"_"+entityTypeName, policies); err != nil {
 		return fmt.Errorf("ClientPolicy SendDiscoveryMessage error: %w", err)
 	}
 
@@ -56,10 +57,12 @@ func (p *ClientPolicy) SendDiscoveryMessage(mac string) error {
 }
 
 func (p *ClientPolicy) getStateTopic(mac string) string {
+	mac = strings.Replace(mac, ":", "_", -1)
 	return fmt.Sprintf("%s/%s_%s/state", p.basetopic, mac, entityTypeName)
 }
 
 func (p *ClientPolicy) getCommandTopic(mac string) string {
+	mac = strings.Replace(mac, ":", "_", -1)
 	return fmt.Sprintf("%s/%s_%s/command", p.basetopic, mac, entityTypeName)
 }
 

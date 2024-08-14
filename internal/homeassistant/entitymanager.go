@@ -47,7 +47,7 @@ func (m *EntityManager) update() error {
 		if !ok {
 			go m.clientPolicy.RunConsumer(client.Mac)
 			go func() {
-				if err := m.clientPolicy.SendDiscoveryMessage(client.Mac); err != nil {
+				if err := m.clientPolicy.SendDiscoveryMessage(client.Mac, client.Name); err != nil {
 					m.logger.Error("entity manager update error while sending discovery message", "error", err, "client", client)
 				}
 			}()
@@ -59,7 +59,7 @@ func (m *EntityManager) update() error {
 	return nil
 }
 
-func (m *EntityManager) Run() {
+func (m *EntityManager) Run() chan bool {
 	ticker := time.NewTicker(m.pollingInterval)
 
 	done := make(chan bool)
@@ -75,4 +75,6 @@ func (m *EntityManager) Run() {
 			}
 		}
 	}()
+
+	return done
 }

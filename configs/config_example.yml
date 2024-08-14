@@ -9,5 +9,6 @@ mqtt:
   clientId: keeneticToMqtt
   baseTopic: keeneticToMqtt
 homeassistant:
+  deviceId: keeneticToMqtt
   updateInterval: 10s
   whitelist:

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"keeneticToMqtt/internal/clients/keenetic/auth"
+	"keeneticToMqtt/internal/dto/homeassistantdto"
 	"keeneticToMqtt/internal/dto/keeneticdto"
 )
 
@@ -46,7 +47,7 @@ func NewPolicy(host string, client client) *Policy {
 
 func (p *Policy) SetPolicy(mac, policy string) error {
 	var body interface{}
-	if policy == "" {
+	if policy == homeassistantdto.NonePolicy {
 		body = struct {
 			Mac    string `json:"mac"`
 			Policy bool   `json:"policy"`

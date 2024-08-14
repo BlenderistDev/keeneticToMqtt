@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"keeneticToMqtt/internal/dto"
+	"keeneticToMqtt/internal/dto/homeassistantdto"
 	"keeneticToMqtt/internal/dto/keeneticdto"
 )
 
@@ -54,8 +55,10 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 		}
 
 		policy := policyMap[device.Mac]
-		if policy != nil && policy.Policy != nil {
+		if policy != nil && policy.Policy != nil && *policy.Policy != "" {
 			client.Policy = *policy.Policy
+		} else {
+			client.Policy = homeassistantdto.NonePolicy
 		}
 		clientList = append(clientList, client)
 	}

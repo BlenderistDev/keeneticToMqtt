@@ -17,12 +17,12 @@ type Device struct {
 }
 
 type Discovery struct {
-	discoveryPrefix string
-	mqtt            *mqtt.Client
+	discoveryPrefix, deviceID string
+	mqtt                      *mqtt.Client
 }
 
 func NewDiscovery(
-	discoveryPrefix string,
+	discoveryPrefix, deviceID string,
 	mqtt *mqtt.Client,
 ) *Discovery {
 	if discoveryPrefix == "" {
@@ -31,11 +31,12 @@ func NewDiscovery(
 
 	return &Discovery{
 		discoveryPrefix: discoveryPrefix,
+		deviceID:        deviceID,
 		mqtt:            mqtt,
 	}
 }
 
-func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, mac, name string, options []string) error {
+func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, deviceName, name string, options []string) error {
 	config := struct {
 		CommandTopic string   `json:"command_topic"`
 		StateTopic   string   `json:"state_topic"`
@@ -49,7 +50,7 @@ func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, mac, name stri
 		Options:      options,
 		Device: Device{
 			Manufacturer: "BlenderistDev keeneticToMqtt",
-			Name:         mac,
+			Name:         deviceName,
 		},
 	}
 
@@ -57,7 +58,7 @@ func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, mac, name stri
 	if err != nil {
 		return fmt.Errorf("error while marshal select discovery config: %w", err)
 	}
-	d.SendDiscovery("select", mac, string(configStr))
+	d.SendDiscovery("select", d.deviceID+name, string(configStr))
 
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"keeneticToMqtt/internal/clients/keenetic/policy"
+	"keeneticToMqtt/internal/dto/homeassistantdto"
 )
 
 type Storage struct {
@@ -49,7 +50,9 @@ func (s *Storage) refresh() {
 		s.logger.Error("error while refresh policies storage", "error", err)
 		return
 	}
-	policies := make([]string, 0, len(resp))
+	policies := make([]string, 0, len(resp)+1)
+
+	policies = append(policies, homeassistantdto.NonePolicy)
 	for k := range resp {
 		policies = append(policies, k)
 	}
