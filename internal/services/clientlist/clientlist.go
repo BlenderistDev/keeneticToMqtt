@@ -8,16 +8,20 @@ import (
 	"keeneticToMqtt/internal/dto/keeneticdto"
 )
 
+//go:generate mockgen -source=clientlist.go -destination=../../../test/mocks/gomock/services/clientlist/clientlist.go
+
 type listClient interface {
-	GetDeviceList() ([]*keeneticdto.DeviceInfoResponse, error)
-	GetClientPolicyList() ([]*keeneticdto.DevicePolicy, error)
+	GetDeviceList() ([]keeneticdto.DeviceInfoResponse, error)
+	GetClientPolicyList() ([]keeneticdto.DevicePolicy, error)
 }
 
+// ClientList struct for building keenetic client list.
 type ClientList struct {
 	listClient   listClient
 	macWhiteList map[string]bool
 }
 
+// NewClientList creates new ClientList.
 func NewClientList(listClient listClient, macWhiteList []string) *ClientList {
 	macMap := make(map[string]bool, len(macWhiteList))
 	for _, mac := range macWhiteList {
@@ -29,6 +33,7 @@ func NewClientList(listClient listClient, macWhiteList []string) *ClientList {
 	}
 }
 
+// GetClientList returns list of dto.Client.
 func (l *ClientList) GetClientList() ([]dto.Client, error) {
 	deviceList, err := l.listClient.GetDeviceList()
 	if err != nil {
@@ -39,7 +44,7 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 		return nil, fmt.Errorf("ClientList client error while getting policy list: %w", err)
 	}
 
-	policyMap := make(map[string]*keeneticdto.DevicePolicy, len(policyList))
+	policyMap := make(map[string]keeneticdto.DevicePolicy, len(policyList))
 	for _, policy := range policyList {
 		policyMap[policy.Mac] = policy
 	}
@@ -55,10 +60,7 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 		}
 
 		policy := policyMap[device.Mac]
-		if policy == nil {
-			continue
-		}
-		if policy != nil && policy.Policy != nil && *policy.Policy != "" {
+		if policy.Policy != nil && *policy.Policy != "" {
 			client.Policy = *policy.Policy
 		} else {
 			client.Policy = homeassistantdto.NonePolicy

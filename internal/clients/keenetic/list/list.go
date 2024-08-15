@@ -28,7 +28,7 @@ func NewList(host string, client client) *List {
 	}
 }
 
-func (l *List) GetDeviceList() ([]*keeneticdto.DeviceInfoResponse, error) {
+func (l *List) GetDeviceList() ([]keeneticdto.DeviceInfoResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+"/rci/show/ip/hotspot/host", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request error in GetDeviceList request: %w", err)
@@ -54,7 +54,7 @@ func (l *List) GetDeviceList() ([]*keeneticdto.DeviceInfoResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read response body error in GetDeviceList request: %w", err)
 	}
-	var res []*keeneticdto.DeviceInfoResponse
+	var res []keeneticdto.DeviceInfoResponse
 
 	if err := json.Unmarshal(resBytes, &res); err != nil {
 		return nil, fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
@@ -63,7 +63,7 @@ func (l *List) GetDeviceList() ([]*keeneticdto.DeviceInfoResponse, error) {
 	return res, nil
 }
 
-func (l *List) GetClientPolicyList() ([]*keeneticdto.DevicePolicy, error) {
+func (l *List) GetClientPolicyList() ([]keeneticdto.DevicePolicy, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+"/rci/show/rc/ip/hotspot/host", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request error in GetClientPolicyList request: %w", err)
@@ -89,7 +89,7 @@ func (l *List) GetClientPolicyList() ([]*keeneticdto.DevicePolicy, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read response body error in GetClientPolicyList request: %w", err)
 	}
-	var res []*keeneticdto.DevicePolicy
+	var res []keeneticdto.DevicePolicy
 
 	if err := json.Unmarshal(resBytes, &res); err != nil {
 		return nil, fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
