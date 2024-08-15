@@ -3,27 +3,33 @@ package discovery
 import (
 	"encoding/json"
 	"fmt"
-
-	"keeneticToMqtt/internal/clients/mqtt"
 )
+
+//go:generate mockgen -source=discovery.go -destination=../../../test/mocks/gomock/services/discovery/discovery.go
 
 const (
 	defaultDiscoveryPrefix = "homeassistant"
 )
 
-type Device struct {
-	Manufacturer string `json:"manufacturer"`
-	Name         string `json:"name"`
-}
+type (
+	mqttClient interface {
+		SendMessage(topic, message string)
+	}
+	device struct {
+		Manufacturer string `json:"manufacturer"`
+		Name         string `json:"name"`
+	}
+	// Discovery struct to send home assistant discovery messages.
+	Discovery struct {
+		discoveryPrefix, deviceID string
+		mqtt                      mqttClient
+	}
+)
 
-type Discovery struct {
-	discoveryPrefix, deviceID string
-	mqtt                      *mqtt.Client
-}
-
+// NewDiscovery creates new Discovery struct.
 func NewDiscovery(
 	discoveryPrefix, deviceID string,
-	mqtt *mqtt.Client,
+	mqtt mqttClient,
 ) *Discovery {
 	if discoveryPrefix == "" {
 		discoveryPrefix = defaultDiscoveryPrefix
@@ -36,19 +42,20 @@ func NewDiscovery(
 	}
 }
 
+// SendDiscoverySelect sends home assistant discovery message for switch.
 func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, deviceName, name string, options []string) error {
 	config := struct {
 		CommandTopic string   `json:"command_topic"`
 		StateTopic   string   `json:"state_topic"`
 		Name         string   `json:"name"`
 		Options      []string `json:"options"`
-		Device       Device
+		Device       device
 	}{
 		CommandTopic: commandTopic,
 		StateTopic:   stateTopic,
 		Name:         name,
 		Options:      options,
-		Device: Device{
+		Device: device{
 			Manufacturer: "BlenderistDev keeneticToMqtt",
 			Name:         deviceName,
 		},
@@ -58,22 +65,23 @@ func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, deviceName, na
 	if err != nil {
 		return fmt.Errorf("error while marshal select discovery config: %w", err)
 	}
-	d.SendDiscovery("select", d.deviceID+name, string(configStr))
+	d.sendDiscovery("select", d.deviceID+name, string(configStr))
 
 	return nil
 }
 
+// SendDiscoverySwitch sends home assistant discovery message for switch.
 func (d *Discovery) SendDiscoverySwitch(commandTopic, stateTopic, deviceName, name string) error {
 	config := struct {
 		CommandTopic string `json:"command_topic"`
 		StateTopic   string `json:"state_topic"`
 		Name         string `json:"name"`
-		Device       Device
+		Device       device
 	}{
 		CommandTopic: commandTopic,
 		StateTopic:   stateTopic,
 		Name:         name,
-		Device: Device{
+		Device: device{
 			Manufacturer: "BlenderistDev keeneticToMqtt",
 			Name:         deviceName,
 		},
@@ -83,12 +91,12 @@ func (d *Discovery) SendDiscoverySwitch(commandTopic, stateTopic, deviceName, na
 	if err != nil {
 		return fmt.Errorf("error while marshal select discovery config: %w", err)
 	}
-	d.SendDiscovery("switch", d.deviceID+name, string(configStr))
+	d.sendDiscovery("switch", d.deviceID+name, string(configStr))
 
 	return nil
 }
 
-func (d *Discovery) SendDiscovery(component, deviceID, config string) {
+func (d *Discovery) sendDiscovery(component, deviceID, config string) {
 	d.mqtt.SendMessage(
 		d.buildDiscoveryTopic(component, deviceID),
 		config,
