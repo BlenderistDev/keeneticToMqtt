@@ -15,14 +15,17 @@ func main() {
 		panic(fmt.Errorf("error while creating container: %w", err))
 	}
 
-	done := cont.EntityManager.Run()
+	entityManagerDone := cont.EntityManager.Run()
+	policyDone := cont.PolicyStorage.Run()
 
 	sig := []os.Signal{syscall.SIGTERM, syscall.SIGINT}
 	shutdownCh := make(chan os.Signal, len(sig))
 	signal.Notify(shutdownCh, sig...)
 
 	<-shutdownCh
-	done <- true
+	policyDone <- struct{}{}
+	entityManagerDone <- struct{}{}
+
 	cont.Logger.Info("process interrupted by signal")
 	return
 }

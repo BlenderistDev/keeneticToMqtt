@@ -22,14 +22,18 @@ func NewStorage(policyClient *policylist.PolicyList, refreshInterval time.Durati
 		logger:          logger,
 	}
 
-	s.refresh()
-	ticker := time.NewTicker(refreshInterval)
+	return s
+}
 
-	done := make(chan bool)
+func (s *Storage) Run() chan struct{} {
+	done := make(chan struct{})
+	ticker := time.NewTicker(s.refreshInterval)
+
 	go func() {
 		for {
 			select {
 			case <-done:
+				s.logger.Info("shutdown policy storage")
 				return
 			case _ = <-ticker.C:
 				s.refresh()
@@ -37,10 +41,12 @@ func NewStorage(policyClient *policylist.PolicyList, refreshInterval time.Durati
 		}
 	}()
 
-	return s
+	return done
 }
-
 func (s *Storage) GetPolicyList() []string {
+	if len(s.policies) == 0 {
+		s.refresh()
+	}
 	return s.policies
 }
 

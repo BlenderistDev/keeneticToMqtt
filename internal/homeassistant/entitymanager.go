@@ -76,14 +76,15 @@ func (m *EntityManager) update() error {
 	return nil
 }
 
-func (m *EntityManager) Run() chan bool {
+func (m *EntityManager) Run() chan struct{} {
+	done := make(chan struct{})
 	ticker := time.NewTicker(m.pollingInterval)
 
-	done := make(chan bool)
 	go func() {
 		for {
 			select {
 			case <-done:
+				m.logger.Info("shutdown entitymanager")
 				return
 			case _ = <-ticker.C:
 				if err := m.update(); err != nil {

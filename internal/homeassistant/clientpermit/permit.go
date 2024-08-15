@@ -1,4 +1,4 @@
-package clientpolicy
+package clientpermit
 
 import (
 	"fmt"
