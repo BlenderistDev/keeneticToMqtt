@@ -1,21 +1,34 @@
 package policy
 
 import (
-	"log/slog"
 	"time"
 
-	"keeneticToMqtt/internal/clients/keenetic/policylist"
 	"keeneticToMqtt/internal/dto/homeassistantdto"
+	"keeneticToMqtt/internal/dto/keeneticdto"
 )
 
-type Storage struct {
-	policyClient    *policylist.PolicyList
-	refreshInterval time.Duration
-	policies        []string
-	logger          *slog.Logger
-}
+//go:generate mockgen -source=policy.go -destination=../../../test/mocks/gomock/storages/policy/policy.go
 
-func NewStorage(policyClient *policylist.PolicyList, refreshInterval time.Duration, logger *slog.Logger) *Storage {
+type (
+	policyClient interface {
+		GetPolicyList() (map[string]keeneticdto.Policy, error)
+	}
+	logger interface {
+		Error(msg string, args ...any)
+		Info(msg string, args ...any)
+	}
+
+	// Storage store policies in-memory.
+	Storage struct {
+		policyClient    policyClient
+		refreshInterval time.Duration
+		policies        []string
+		logger          logger
+	}
+)
+
+// NewStorage creates Storage
+func NewStorage(policyClient policyClient, refreshInterval time.Duration, logger logger) *Storage {
 	s := &Storage{
 		policyClient:    policyClient,
 		refreshInterval: refreshInterval,
@@ -25,6 +38,7 @@ func NewStorage(policyClient *policylist.PolicyList, refreshInterval time.Durati
 	return s
 }
 
+// Run start storage updates.
 func (s *Storage) Run() chan struct{} {
 	done := make(chan struct{})
 	ticker := time.NewTicker(s.refreshInterval)
@@ -43,6 +57,8 @@ func (s *Storage) Run() chan struct{} {
 
 	return done
 }
+
+// GetPolicyList returns policy list.
 func (s *Storage) GetPolicyList() []string {
 	if len(s.policies) == 0 {
 		s.refresh()
@@ -64,4 +80,5 @@ func (s *Storage) refresh() {
 	}
 
 	s.policies = policies
+	s.logger.Info("update policies", "policies", policies)
 }

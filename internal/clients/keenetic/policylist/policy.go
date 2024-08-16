@@ -28,7 +28,7 @@ func NewPolicyList(host string, client client) *PolicyList {
 	}
 }
 
-func (l *PolicyList) GetPolicyList() (keeneticdto.PolicyResponse, error) {
+func (l *PolicyList) GetPolicyList() (map[string]keeneticdto.Policy, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+"/rci/show/rc/ip/policy", nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request error in GetPolicyList request: %w", err)
@@ -54,7 +54,7 @@ func (l *PolicyList) GetPolicyList() (keeneticdto.PolicyResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read response body error in GetPolicyList request: %w", err)
 	}
-	var res keeneticdto.PolicyResponse
+	var res map[string]keeneticdto.Policy
 
 	if err := json.Unmarshal(resBytes, &res); err != nil {
 		return nil, fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
