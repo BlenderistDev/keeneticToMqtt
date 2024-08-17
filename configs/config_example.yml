@@ -11,4 +11,4 @@ mqtt:
 homeassistant:
   deviceId: keeneticToMqtt
   updateInterval: 10s
-  whitelist:
+  whitelist: []

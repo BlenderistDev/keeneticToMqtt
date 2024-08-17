@@ -41,6 +41,9 @@ func SetConfigFile(path string) {
 }
 
 func NewDefaultConfig() (*Config, error) {
+	configPath := os.Getenv("CONFIG_PATH")
+	SetConfigFile(configPath)
+
 	if err := InitializeConfig(); err != nil {
 		return nil, err
 	}
