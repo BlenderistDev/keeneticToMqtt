@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,7 +56,7 @@ func TestDiscovery_SendDiscoverySelect(t *testing.T) {
 			discovery := NewDiscovery(tt.discoveryPrefix, tt.deviceID, tt.mqttClient())
 			err := discovery.SendDiscoverySelect(tt.commandTopic, tt.stateTopic, tt.deviceName, tt.entityName, tt.options)
 			if tt.expectedErr != nil {
-				assert.True(t, errors.Is(err, tt.expectedErr))
+				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
 				assert.Nil(t, err)
 			}
@@ -113,7 +112,7 @@ func TestDiscovery_SendDiscoverySwitch(t *testing.T) {
 			discovery := NewDiscovery(tt.discoveryPrefix, tt.deviceID, tt.mqttClient())
 			err := discovery.SendDiscoverySwitch(tt.commandTopic, tt.stateTopic, tt.deviceName, tt.entityName)
 			if tt.expectedErr != nil {
-				assert.True(t, errors.Is(err, tt.expectedErr))
+				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
 				assert.Nil(t, err)
 			}

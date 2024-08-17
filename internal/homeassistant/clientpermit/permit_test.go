@@ -61,7 +61,7 @@ func TestClientPermit_SendDiscoveryMessage(t *testing.T) {
 
 			err := perimt.SendDiscoveryMessage(mac, name)
 			if tt.expectedErr != nil {
-				assert.True(t, errors.Is(err, tt.expectedErr))
+				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
 				assert.Nil(t, err)
 			}

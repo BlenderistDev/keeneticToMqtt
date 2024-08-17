@@ -18,8 +18,7 @@ func TestClientList_GetClientList(t *testing.T) {
 	defer ctrl.Finish()
 
 	const (
-		mac1 = "mac1"
-
+		mac1  = "mac1"
 		name1 = "name1"
 	)
 
@@ -214,7 +213,7 @@ func TestClientList_GetClientList(t *testing.T) {
 			)
 			res, err := clientList.GetClientList()
 			if tt.expectedErr != nil {
-				assert.True(t, errors.Is(err, tt.expectedErr))
+				assert.ErrorIs(t, err, tt.expectedErr)
 				assert.True(t, len(res) == 0)
 			} else {
 				assert.Nil(t, err)

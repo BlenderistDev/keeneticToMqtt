@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"keeneticToMqtt/internal/clients/keenetic/auth"
 	"keeneticToMqtt/internal/dto/homeassistantdto"
+	"keeneticToMqtt/internal/errs"
 )
 
 type client interface {
@@ -123,7 +123,7 @@ func (p *AccessUpdate) ipHotspotHostRequest(body interface{}) error {
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return auth.ErrUnauthorized
+		return errs.ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {

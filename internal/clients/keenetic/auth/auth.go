@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/cookiejar"
-)
 
-var (
-	ErrUnauthorized = errors.New("unauthorized")
+	"keeneticToMqtt/internal/errs"
 )
 
 type Auth struct {
@@ -34,7 +32,7 @@ func NewAuth(host, login, password string, cookiejar *cookiejar.Jar) *Auth {
 func (a *Auth) RefreshAuth() error {
 	realm, challenge, err := a.checkAuth()
 	switch {
-	case errors.Is(err, ErrUnauthorized):
+	case errors.Is(err, errs.ErrUnauthorized):
 		if err := a.auth(realm, challenge); err != nil {
 			return fmt.Errorf("error while keenetic auth: %w", err)
 		}
@@ -62,7 +60,7 @@ func (a *Auth) checkAuth() (realm, challenge string, err error) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		challenge = resp.Header.Get("X-NDM-Challenge")
 		realm = resp.Header.Get("X-NDM-Realm")
-		err = ErrUnauthorized
+		err = errs.ErrUnauthorized
 		return
 	}
 
@@ -109,7 +107,7 @@ func (a *Auth) auth(realm, challenge string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return ErrUnauthorized
+		return errs.ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {

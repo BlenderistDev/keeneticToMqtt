@@ -6,9 +6,13 @@ import (
 	"io"
 	"net/http"
 
-	"keeneticToMqtt/internal/clients/keenetic/auth"
 	"keeneticToMqtt/internal/dto/keeneticdto"
+	"keeneticToMqtt/internal/errs"
 )
+
+//go:generate mockgen -source=policy.go -destination=../../../../test/mocks/gomock/clients/keenetic/policylist/policy.go
+
+const policyListUrl = "/rci/show/rc/ip/policy"
 
 type client interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -29,7 +33,7 @@ func NewPolicyList(host string, client client) *PolicyList {
 }
 
 func (l *PolicyList) GetPolicyList() (map[string]keeneticdto.Policy, error) {
-	req, err := http.NewRequest(http.MethodGet, l.host+"/rci/show/rc/ip/policy", nil)
+	req, err := http.NewRequest(http.MethodGet, l.host+policyListUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request error in GetPolicyList request: %w", err)
 	}
@@ -43,7 +47,7 @@ func (l *PolicyList) GetPolicyList() (map[string]keeneticdto.Policy, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, auth.ErrUnauthorized
+		return nil, errs.ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {

@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"keeneticToMqtt/internal/clients/keenetic/auth"
 	"keeneticToMqtt/internal/dto/keeneticdto"
+	"keeneticToMqtt/internal/errs"
 )
 
 type client interface {
@@ -43,7 +43,7 @@ func (l *List) GetDeviceList() ([]keeneticdto.DeviceInfoResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, auth.ErrUnauthorized
+		return nil, errs.ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -78,7 +78,7 @@ func (l *List) GetClientPolicyList() ([]keeneticdto.DevicePolicy, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return nil, auth.ErrUnauthorized
+		return nil, errs.ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {
