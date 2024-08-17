@@ -1,5 +1,5 @@
 keenetic:
-  host: 192.168.0.1
+  host: http://192.168.0.1
   login: login
   password: password
 mqtt:
