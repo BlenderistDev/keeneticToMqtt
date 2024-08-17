@@ -14,17 +14,19 @@ import (
 
 const policyListUrl = "/rci/show/rc/ip/policy"
 
-type client interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 type (
-	PolicyList struct {
-		host   string
-		client client
+	client interface {
+		Do(req *http.Request) (*http.Response, error)
 	}
 )
 
+// PolicyList struct to get keenetic policy list.
+type PolicyList struct {
+	host   string
+	client client
+}
+
+// NewPolicyList creates new PolicyList.
 func NewPolicyList(host string, client client) *PolicyList {
 	return &PolicyList{
 		host:   host,
@@ -32,6 +34,7 @@ func NewPolicyList(host string, client client) *PolicyList {
 	}
 }
 
+// GetPolicyList return map of policies. Key of map is name of policy.
 func (l *PolicyList) GetPolicyList() (map[string]keeneticdto.Policy, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+policyListUrl, nil)
 	if err != nil {

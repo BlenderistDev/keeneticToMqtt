@@ -15,14 +15,9 @@ const (
 	ipHotspotHostURL = "/rci/ip/hotspot/host"
 )
 
-type client interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 type (
-	AccessUpdate struct {
-		host   string
-		client client
+	client interface {
+		Do(req *http.Request) (*http.Response, error)
 	}
 
 	responseStatus struct {
@@ -56,6 +51,7 @@ type (
 	}
 )
 
+// NewAccessUpdate creates new AccessUpdate.
 func NewAccessUpdate(host string, client client) *AccessUpdate {
 	return &AccessUpdate{
 		host:   host,
@@ -63,6 +59,13 @@ func NewAccessUpdate(host string, client client) *AccessUpdate {
 	}
 }
 
+// AccessUpdate struct for controlling keenetic client access.
+type AccessUpdate struct {
+	host   string
+	client client
+}
+
+// SetPolicy set keenetic client policy.
 func (p *AccessUpdate) SetPolicy(mac, policy string) error {
 	var body interface{}
 	if policy == homeassistantdto.NonePolicy {
@@ -80,6 +83,7 @@ func (p *AccessUpdate) SetPolicy(mac, policy string) error {
 	return p.ipHotspotHostRequest(body)
 }
 
+// SetPermit set keenetic client internet permit.
 func (p *AccessUpdate) SetPermit(mac string, permit bool) error {
 	var body interface{}
 	if permit {

@@ -19,12 +19,13 @@ type (
 		Manufacturer string `json:"manufacturer"`
 		Name         string `json:"name"`
 	}
-	// Discovery struct to send home assistant discovery messages.
-	Discovery struct {
-		discoveryPrefix, deviceID string
-		mqtt                      mqttClient
-	}
 )
+
+// Discovery struct to send home assistant discovery messages.
+type Discovery struct {
+	discoveryPrefix, deviceID string
+	mqtt                      mqttClient
+}
 
 // NewDiscovery creates new Discovery struct.
 func NewDiscovery(

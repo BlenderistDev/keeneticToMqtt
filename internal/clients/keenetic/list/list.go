@@ -15,17 +15,19 @@ const (
 	deviceListUrl       = "/rci/show/ip/hotspot/host"
 )
 
-type client interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 type (
-	List struct {
-		host   string
-		client client
+	client interface {
+		Do(req *http.Request) (*http.Response, error)
 	}
 )
 
+// List struct for get client lists from keenetic.
+type List struct {
+	host   string
+	client client
+}
+
+// NewList creates new List.
 func NewList(host string, client client) *List {
 	return &List{
 		host:   host,
@@ -33,6 +35,7 @@ func NewList(host string, client client) *List {
 	}
 }
 
+// GetDeviceList returns keenetic device list.
 func (l *List) GetDeviceList() ([]keeneticdto.DeviceInfoResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+deviceListUrl, nil)
 	if err != nil {
@@ -68,6 +71,7 @@ func (l *List) GetDeviceList() ([]keeneticdto.DeviceInfoResponse, error) {
 	return res, nil
 }
 
+// GetClientPolicyList returns keenetic policy list.
 func (l *List) GetClientPolicyList() ([]keeneticdto.DevicePolicy, error) {
 	req, err := http.NewRequest(http.MethodGet, l.host+clientPolicyListUrl, nil)
 	if err != nil {
