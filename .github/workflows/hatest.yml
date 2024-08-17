@@ -1,10 +1,10 @@
-name: "Test"
+name: "Test ha addon build"
 
 on: [push, pull_request]
 
 jobs:
   build:
-    name: Test build
+    name: Test ha addon build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
@@ -15,5 +15,5 @@ jobs:
           args: |
             --test \
             --all \
-            --target addon-folder \
+            --target . \
             --docker-hub blenderistDev
