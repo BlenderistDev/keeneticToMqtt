@@ -13,7 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"keeneticToMqtt/internal/dto/homeassistantdto"
 	"keeneticToMqtt/internal/errs"
-	mock_policylist "keeneticToMqtt/test/mocks/gomock/clients/keenetic/policylist"
+	mock_accessupdate "keeneticToMqtt/test/mocks/gomock/clients/keenetic/accessupdate"
 )
 
 func TestAccessUpdate_SetPermit(t *testing.T) {
@@ -198,7 +198,7 @@ func TestAccessUpdate_SetPermit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := mock_policylist.NewMockclient(ctrl)
+			client := mock_accessupdate.NewMockclient(ctrl)
 			client.EXPECT().Do(gomock.Cond(func(x any) bool {
 				req, ok := x.(*http.Request)
 				if !ok || req == nil {
@@ -209,8 +209,8 @@ func TestAccessUpdate_SetPermit(t *testing.T) {
 				return true
 			})).Return(tt.getResponse(), tt.getResponseError())
 
-			policyList := NewAccessUpdate(host, client)
-			err := policyList.SetPermit(mac, tt.permit)
+			accessUpdate := NewAccessUpdate(host, client)
+			err := accessUpdate.SetPermit(mac, tt.permit)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else if tt.expectedErrStr != "" {
@@ -394,7 +394,7 @@ func TestAccessUpdate_SetPolicy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := mock_policylist.NewMockclient(ctrl)
+			client := mock_accessupdate.NewMockclient(ctrl)
 			client.EXPECT().Do(gomock.Cond(func(x any) bool {
 				req, ok := x.(*http.Request)
 				if !ok || req == nil {
@@ -405,8 +405,8 @@ func TestAccessUpdate_SetPolicy(t *testing.T) {
 				return true
 			})).Return(tt.getResponse(), tt.getResponseError())
 
-			policyList := NewAccessUpdate(host, client)
-			err := policyList.SetPolicy(mac, tt.policy)
+			accessUpdate := NewAccessUpdate(host, client)
+			err := accessUpdate.SetPolicy(mac, tt.policy)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else if tt.expectedErrStr != "" {

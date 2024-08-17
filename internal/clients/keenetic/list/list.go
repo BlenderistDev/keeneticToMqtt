@@ -10,6 +10,8 @@ import (
 	"keeneticToMqtt/internal/errs"
 )
 
+//go:generate mockgen -source=list.go -destination=../../../../test/mocks/gomock/clients/keenetic/list/list.go
+
 const (
 	clientPolicyListUrl = "/rci/show/rc/ip/hotspot/host"
 	deviceListUrl       = "/rci/show/ip/hotspot/host"

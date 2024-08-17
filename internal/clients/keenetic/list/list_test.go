@@ -13,7 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"keeneticToMqtt/internal/dto/keeneticdto"
 	"keeneticToMqtt/internal/errs"
-	mock_policylist "keeneticToMqtt/test/mocks/gomock/clients/keenetic/policylist"
+	mock_list "keeneticToMqtt/test/mocks/gomock/clients/keenetic/list"
 )
 
 func TestList_GetDeviceList(t *testing.T) {
@@ -124,7 +124,7 @@ func TestList_GetDeviceList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := mock_policylist.NewMockclient(ctrl)
+			client := mock_list.NewMockclient(ctrl)
 			client.EXPECT().Do(gomock.Cond(func(x any) bool {
 				req, ok := x.(*http.Request)
 				if !ok || req == nil {
@@ -135,8 +135,8 @@ func TestList_GetDeviceList(t *testing.T) {
 				return true
 			})).Return(tt.getResponse(), tt.getResponseError())
 
-			policyList := NewList(host, client)
-			res, err := policyList.GetDeviceList()
+			list := NewList(host, client)
+			res, err := list.GetDeviceList()
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else if tt.expectedErrStr != "" {
@@ -260,7 +260,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := mock_policylist.NewMockclient(ctrl)
+			client := mock_list.NewMockclient(ctrl)
 			client.EXPECT().Do(gomock.Cond(func(x any) bool {
 				req, ok := x.(*http.Request)
 				if !ok || req == nil {
@@ -271,8 +271,8 @@ func TestList_GetClientPolicyList(t *testing.T) {
 				return true
 			})).Return(tt.getResponse(), tt.getResponseError())
 
-			policyList := NewList(host, client)
-			res, err := policyList.GetClientPolicyList()
+			list := NewList(host, client)
+			res, err := list.GetClientPolicyList()
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else if tt.expectedErrStr != "" {

@@ -11,6 +11,8 @@ import (
 	"keeneticToMqtt/internal/errs"
 )
 
+//go:generate mockgen -source=access.go -destination=../../../../test/mocks/gomock/clients/keenetic/accessupdate/access.go
+
 const (
 	ipHotspotHostURL = "/rci/ip/hotspot/host"
 )
