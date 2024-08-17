@@ -44,6 +44,7 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+policyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -67,6 +68,7 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+policyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				return nil
@@ -81,6 +83,7 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+policyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -104,6 +107,7 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+policyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -127,6 +131,7 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+policyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				stringReader := strings.NewReader("")
@@ -164,6 +169,7 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 				assert.Regexp(t, tt.expectedErrStr+".*", err.Error())
 			} else {
 				assert.Equal(t, tt.expected, res)
+				assert.Nil(t, err)
 			}
 		})
 	}

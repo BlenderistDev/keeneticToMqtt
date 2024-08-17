@@ -42,6 +42,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+deviceListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -65,6 +66,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+deviceListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				return nil
@@ -79,6 +81,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+deviceListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -102,6 +105,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+deviceListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -125,6 +129,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+deviceListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				stringReader := strings.NewReader("")
@@ -162,6 +167,7 @@ func TestList_GetDeviceList(t *testing.T) {
 				assert.Regexp(t, tt.expectedErrStr+".*", err.Error())
 			} else {
 				assert.Equal(t, tt.expected, res)
+				assert.Nil(t, err)
 			}
 		})
 	}
@@ -192,10 +198,11 @@ func TestList_GetClientPolicyList(t *testing.T) {
 		getResponseError func() error
 	}{
 		{
-			name: "success get device list",
+			name: "success get client policy list",
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+clientPolicyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -219,6 +226,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+clientPolicyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				return nil
@@ -233,6 +241,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+clientPolicyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -256,6 +265,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+clientPolicyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				body := successRes
@@ -279,6 +289,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			validateRequest: func(req *http.Request) {
 				assert.Equal(t, host+clientPolicyListUrl, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodGet, req.Method)
 			},
 			getResponse: func() *http.Response {
 				stringReader := strings.NewReader("")
@@ -316,6 +327,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 				assert.Regexp(t, tt.expectedErrStr+".*", err.Error())
 			} else {
 				assert.Equal(t, tt.expected, res)
+				assert.Nil(t, err)
 			}
 		})
 	}
