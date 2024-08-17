@@ -1,0 +1,39 @@
+name: "KeeneticToMqtt"
+description: "keenetic api to mqtt bridge"
+version: "0.0.5"
+slug: "keenetic_to_mqtt"
+init: false
+arch:
+  - amd64
+options:
+  keenetic:
+    host: ""
+    login: ""
+    password: ""
+  mqtt:
+    host: ""
+    login: ""
+    password: ""
+    clientId: keeneticToMqtt
+    baseTopic: keeneticToMqtt
+  homeassistant:
+    deviceId: keeneticToMqtt
+    updateInterval: 10s
+    whitelist: []
+schema:
+  log_level: list(trace|debug|info|notice|warning|error|fatal)?
+  keenetic:
+    host: str
+    login: str
+    password: str
+  mqtt:
+    host: str
+    login: str
+    password: str
+    clientId: str
+    baseTopic: str
+  homeassistant:
+    deviceId: str
+    updateInterval: str
+    whitelist:
+      - str
