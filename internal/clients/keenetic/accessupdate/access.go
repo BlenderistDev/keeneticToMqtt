@@ -11,6 +11,10 @@ import (
 	"keeneticToMqtt/internal/errs"
 )
 
+const (
+	ipHotspotHostURL = "/rci/ip/hotspot/host"
+)
+
 type client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
@@ -33,6 +37,23 @@ type (
 	}
 
 	response map[string]responseClient
+
+	permitTrueReq struct {
+		Mac    string `json:"mac"`
+		Permit bool   `json:"permit"`
+	}
+	permitFalseReq struct {
+		Mac  string `json:"mac"`
+		Deny bool   `json:"deny"`
+	}
+	setEmptyPolicyReq struct {
+		Mac    string `json:"mac"`
+		Policy bool   `json:"policy"`
+	}
+	setPolicyReq struct {
+		Mac    string `json:"mac"`
+		Policy string `json:"policy"`
+	}
 )
 
 func NewAccessUpdate(host string, client client) *AccessUpdate {
@@ -45,18 +66,12 @@ func NewAccessUpdate(host string, client client) *AccessUpdate {
 func (p *AccessUpdate) SetPolicy(mac, policy string) error {
 	var body interface{}
 	if policy == homeassistantdto.NonePolicy {
-		body = struct {
-			Mac    string `json:"mac"`
-			Policy bool   `json:"policy"`
-		}{
+		body = setEmptyPolicyReq{
 			Mac:    mac,
 			Policy: false,
 		}
 	} else {
-		body = struct {
-			Mac    string `json:"mac"`
-			Policy string `json:"policy"`
-		}{
+		body = setPolicyReq{
 			Mac:    mac,
 			Policy: policy,
 		}
@@ -68,18 +83,12 @@ func (p *AccessUpdate) SetPolicy(mac, policy string) error {
 func (p *AccessUpdate) SetPermit(mac string, permit bool) error {
 	var body interface{}
 	if permit {
-		body = struct {
-			Mac    string `json:"mac"`
-			Permit bool   `json:"permit"`
-		}{
+		body = permitTrueReq{
 			Mac:    mac,
 			Permit: permit,
 		}
 	} else {
-		body = struct {
-			Mac  string `json:"mac"`
-			Deny bool   `json:"deny"`
-		}{
+		body = permitFalseReq{
 			Mac:  mac,
 			Deny: !permit,
 		}
@@ -93,41 +102,40 @@ func (p *AccessUpdate) ipHotspotHostRequest(body interface{}) error {
 	if err != nil {
 		return fmt.Errorf("RciIpHotspotHost error: %w", err)
 	}
-	req, err := http.NewRequest(http.MethodPost, p.host+"/rci/ip/hotspot/host", bytes.NewReader(b))
+
+	req, err := http.NewRequest(http.MethodPost, p.host+ipHotspotHostURL, bytes.NewReader(b))
 	if err != nil {
-		return fmt.Errorf("build request error in setpolicy request: %w", err)
+		return fmt.Errorf("build request error in setaccess request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("send error in setpolicy request: %w", err)
+		return fmt.Errorf("send error in setaccess request: %w", err)
 	}
 	defer resp.Body.Close()
-
-	resBytes, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		return fmt.Errorf("read response body error in setpolicy request: %w", err)
-	}
-
-	var res response
-
-	if err := json.Unmarshal(resBytes, &res); err != nil {
-		return fmt.Errorf("unmarshal response error in setpolicy request: %w", err)
-	}
-
-	if len(res) == 0 {
-		return fmt.Errorf("no status in setpolicy response: %w", err)
-	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return errs.ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("error in setpolicy request, status code: %d", resp.StatusCode)
+		return fmt.Errorf("error in setaccess request, status code: %d", resp.StatusCode)
+	}
+
+	resBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read response body error in access request: %w", err)
+	}
+
+	var res response
+	if err := json.Unmarshal(resBytes, &res); err != nil {
+		return fmt.Errorf("unmarshal response error in setaccess request: %w", err)
+	}
+
+	if len(res) == 0 {
+		return fmt.Errorf("no status in setaccess response: %w", err)
 	}
 
 	return nil

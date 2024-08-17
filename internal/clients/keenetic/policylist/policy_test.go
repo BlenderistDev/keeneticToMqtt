@@ -64,12 +64,8 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			expected: successRes,
 		},
 		{
-			name: "error from client",
-			validateRequest: func(req *http.Request) {
-				assert.Equal(t, host+policyListUrl, req.URL.String())
-				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
-				assert.Equal(t, http.MethodGet, req.Method)
-			},
+			name:            "error from client",
+			validateRequest: func(req *http.Request) {},
 			getResponse: func() *http.Response {
 				return nil
 			},
@@ -79,18 +75,10 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			expectedErr: someErr,
 		},
 		{
-			name: "http.StatusUnauthorized status code",
-			validateRequest: func(req *http.Request) {
-				assert.Equal(t, host+policyListUrl, req.URL.String())
-				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
-				assert.Equal(t, http.MethodGet, req.Method)
-			},
+			name:            "http.StatusUnauthorized status code",
+			validateRequest: func(req *http.Request) {},
 			getResponse: func() *http.Response {
-				body := successRes
-				bodyStr, err := json.Marshal(body)
-				assert.Nil(t, err)
-
-				bytesReader := bytes.NewReader(bodyStr)
+				bytesReader := strings.NewReader("")
 				resp := http.Response{
 					StatusCode: http.StatusUnauthorized,
 					Body:       io.NopCloser(bytesReader),
@@ -103,18 +91,10 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			expectedErr: errs.ErrUnauthorized,
 		},
 		{
-			name: "status code not 200",
-			validateRequest: func(req *http.Request) {
-				assert.Equal(t, host+policyListUrl, req.URL.String())
-				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
-				assert.Equal(t, http.MethodGet, req.Method)
-			},
+			name:            "status code not 200",
+			validateRequest: func(req *http.Request) {},
 			getResponse: func() *http.Response {
-				body := successRes
-				bodyStr, err := json.Marshal(body)
-				assert.Nil(t, err)
-
-				bytesReader := bytes.NewReader(bodyStr)
+				bytesReader := strings.NewReader("")
 				resp := http.Response{
 					StatusCode: http.StatusBadRequest,
 					Body:       io.NopCloser(bytesReader),
@@ -127,12 +107,8 @@ func TestPolicyList_GetPolicyList(t *testing.T) {
 			expectedErrStr: "error in GetPolicyList request, status code: 400",
 		},
 		{
-			name: "error while unmarshal body",
-			validateRequest: func(req *http.Request) {
-				assert.Equal(t, host+policyListUrl, req.URL.String())
-				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
-				assert.Equal(t, http.MethodGet, req.Method)
-			},
+			name:            "error while unmarshal body",
+			validateRequest: func(req *http.Request) {},
 			getResponse: func() *http.Response {
 				stringReader := strings.NewReader("")
 				resp := http.Response{

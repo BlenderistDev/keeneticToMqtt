@@ -1,4 +1,4 @@
-package list
+package accessupdate
 
 import (
 	"bytes"
@@ -11,12 +11,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-	"keeneticToMqtt/internal/dto/keeneticdto"
+	"keeneticToMqtt/internal/dto/homeassistantdto"
 	"keeneticToMqtt/internal/errs"
 	mock_policylist "keeneticToMqtt/test/mocks/gomock/clients/keenetic/policylist"
 )
 
-func TestList_GetDeviceList(t *testing.T) {
+func TestAccessUpdate_SetPermit(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -25,25 +25,36 @@ func TestList_GetDeviceList(t *testing.T) {
 		mac  = "mac"
 	)
 
-	successRes := []keeneticdto.DeviceInfoResponse{{Mac: mac}}
+	successRes := response{
+		"key": {},
+	}
 	someErr := errors.New("some err")
 
 	tests := []struct {
 		name             string
-		expected         []keeneticdto.DeviceInfoResponse
 		expectedErr      error
 		expectedErrStr   string
 		validateRequest  func(req *http.Request)
 		getResponse      func() *http.Response
 		getResponseError func() error
+		permit           bool
 	}{
 		{
-			name: "success get device list",
+			name: "success set permit to true",
 			validateRequest: func(req *http.Request) {
-				assert.Equal(t, host+deviceListUrl, req.URL.String())
+				assert.Equal(t, host+ipHotspotHostURL, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
-				assert.Equal(t, http.MethodGet, req.Method)
+				assert.Equal(t, http.MethodPost, req.Method)
+
+				b, err := io.ReadAll(req.Body)
+				assert.Nil(t, err)
+				var body permitTrueReq
+				err = json.Unmarshal(b, &body)
+				assert.Nil(t, err)
+				assert.Equal(t, body.Mac, mac)
+				assert.Equal(t, body.Permit, true)
 			},
+			permit: true,
 			getResponse: func() *http.Response {
 				body := successRes
 				bodyStr, err := json.Marshal(body)
@@ -59,7 +70,70 @@ func TestList_GetDeviceList(t *testing.T) {
 			getResponseError: func() error {
 				return nil
 			},
-			expected: successRes,
+		},
+		{
+			name: "success set permit to false",
+			validateRequest: func(req *http.Request) {
+				assert.Equal(t, host+ipHotspotHostURL, req.URL.String())
+				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodPost, req.Method)
+
+				b, err := io.ReadAll(req.Body)
+				assert.Nil(t, err)
+				var body permitFalseReq
+				err = json.Unmarshal(b, &body)
+				assert.Nil(t, err)
+				assert.Equal(t, body.Mac, mac)
+				assert.Equal(t, body.Deny, true)
+			},
+			permit: false,
+			getResponse: func() *http.Response {
+				body := successRes
+				bodyStr, err := json.Marshal(body)
+				assert.Nil(t, err)
+
+				bytesReader := bytes.NewReader(bodyStr)
+				resp := http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytesReader),
+				}
+				return &resp
+			},
+			getResponseError: func() error {
+				return nil
+			},
+		},
+		{
+			name: "empty resp",
+			validateRequest: func(req *http.Request) {
+				assert.Equal(t, host+ipHotspotHostURL, req.URL.String())
+				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodPost, req.Method)
+
+				b, err := io.ReadAll(req.Body)
+				assert.Nil(t, err)
+				var body permitTrueReq
+				err = json.Unmarshal(b, &body)
+				assert.Nil(t, err)
+				assert.Equal(t, body.Mac, mac)
+				assert.Equal(t, body.Permit, true)
+			},
+			permit: true,
+			getResponse: func() *http.Response {
+				bodyStr, err := json.Marshal(nil)
+				assert.Nil(t, err)
+
+				bytesReader := bytes.NewReader(bodyStr)
+				resp := http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytesReader),
+				}
+				return &resp
+			},
+			getResponseError: func() error {
+				return nil
+			},
+			expectedErrStr: "no status in setaccess response",
 		},
 		{
 			name:            "error from client",
@@ -102,7 +176,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			getResponseError: func() error {
 				return nil
 			},
-			expectedErrStr: "error in GetDeviceList request, status code: 400",
+			expectedErrStr: "error in setaccess request, status code: 400",
 		},
 		{
 			name:            "error while unmarshal body",
@@ -118,7 +192,7 @@ func TestList_GetDeviceList(t *testing.T) {
 			getResponseError: func() error {
 				return nil
 			},
-			expectedErrStr: "unmarshal response error in GetDeviceList request:",
+			expectedErrStr: "unmarshal response error in setaccess request:",
 		},
 	}
 
@@ -135,51 +209,59 @@ func TestList_GetDeviceList(t *testing.T) {
 				return true
 			})).Return(tt.getResponse(), tt.getResponseError())
 
-			policyList := NewList(host, client)
-			res, err := policyList.GetDeviceList()
+			policyList := NewAccessUpdate(host, client)
+			err := policyList.SetPermit(mac, tt.permit)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else if tt.expectedErrStr != "" {
 				assert.Regexp(t, tt.expectedErrStr+".*", err.Error())
 			} else {
-				assert.Equal(t, tt.expected, res)
 				assert.Nil(t, err)
 			}
 		})
 	}
 }
 
-func TestList_GetClientPolicyList(t *testing.T) {
+func TestAccessUpdate_SetPolicy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	const (
-		host = "host"
-		mac  = "mac"
+		host   = "host"
+		mac    = "mac"
+		policy = "policy"
 	)
 
-	successRes := []keeneticdto.DevicePolicy{{
-		Mac:    mac,
-		Permit: true,
-	}}
+	successRes := response{
+		"key": {},
+	}
 	someErr := errors.New("some err")
 
 	tests := []struct {
 		name             string
-		expected         []keeneticdto.DevicePolicy
 		expectedErr      error
 		expectedErrStr   string
 		validateRequest  func(req *http.Request)
 		getResponse      func() *http.Response
 		getResponseError func() error
+		policy           string
 	}{
 		{
-			name: "success get client policy list",
+			name: "success set policy to some policy",
 			validateRequest: func(req *http.Request) {
-				assert.Equal(t, host+clientPolicyListUrl, req.URL.String())
+				assert.Equal(t, host+ipHotspotHostURL, req.URL.String())
 				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
-				assert.Equal(t, http.MethodGet, req.Method)
+				assert.Equal(t, http.MethodPost, req.Method)
+
+				b, err := io.ReadAll(req.Body)
+				assert.Nil(t, err)
+				var body setPolicyReq
+				err = json.Unmarshal(b, &body)
+				assert.Nil(t, err)
+				assert.Equal(t, body.Mac, mac)
+				assert.Equal(t, body.Policy, policy)
 			},
+			policy: policy,
 			getResponse: func() *http.Response {
 				body := successRes
 				bodyStr, err := json.Marshal(body)
@@ -195,8 +277,40 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			getResponseError: func() error {
 				return nil
 			},
-			expected: successRes,
 		},
+		{
+			name: "success set policy to none",
+			validateRequest: func(req *http.Request) {
+				assert.Equal(t, host+ipHotspotHostURL, req.URL.String())
+				assert.Equal(t, "application/json;charset=UTF-8", req.Header.Get("Content-Type"))
+				assert.Equal(t, http.MethodPost, req.Method)
+
+				b, err := io.ReadAll(req.Body)
+				assert.Nil(t, err)
+				var body setEmptyPolicyReq
+				err = json.Unmarshal(b, &body)
+				assert.Nil(t, err)
+				assert.Equal(t, body.Mac, mac)
+				assert.Equal(t, body.Policy, false)
+			},
+			policy: homeassistantdto.NonePolicy,
+			getResponse: func() *http.Response {
+				body := successRes
+				bodyStr, err := json.Marshal(body)
+				assert.Nil(t, err)
+
+				bytesReader := bytes.NewReader(bodyStr)
+				resp := http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytesReader),
+				}
+				return &resp
+			},
+			getResponseError: func() error {
+				return nil
+			},
+		},
+
 		{
 			name:            "error from client",
 			validateRequest: func(req *http.Request) {},
@@ -238,7 +352,7 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			getResponseError: func() error {
 				return nil
 			},
-			expectedErrStr: "error in GetClientPolicyList request, status code: 400",
+			expectedErrStr: "error in setaccess request, status code: 400",
 		},
 		{
 			name:            "error while unmarshal body",
@@ -254,7 +368,27 @@ func TestList_GetClientPolicyList(t *testing.T) {
 			getResponseError: func() error {
 				return nil
 			},
-			expectedErrStr: "unmarshal response error in GetClientPolicyList request:",
+			expectedErrStr: "unmarshal response error in setaccess request:",
+		},
+		{
+			name:            "empty response",
+			validateRequest: func(req *http.Request) {},
+			policy:          policy,
+			getResponse: func() *http.Response {
+				bodyStr, err := json.Marshal(nil)
+				assert.Nil(t, err)
+
+				bytesReader := bytes.NewReader(bodyStr)
+				resp := http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytesReader),
+				}
+				return &resp
+			},
+			getResponseError: func() error {
+				return nil
+			},
+			expectedErrStr: "no status in setaccess response",
 		},
 	}
 
@@ -271,14 +405,13 @@ func TestList_GetClientPolicyList(t *testing.T) {
 				return true
 			})).Return(tt.getResponse(), tt.getResponseError())
 
-			policyList := NewList(host, client)
-			res, err := policyList.GetClientPolicyList()
+			policyList := NewAccessUpdate(host, client)
+			err := policyList.SetPolicy(mac, tt.policy)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else if tt.expectedErrStr != "" {
 				assert.Regexp(t, tt.expectedErrStr+".*", err.Error())
 			} else {
-				assert.Equal(t, tt.expected, res)
 				assert.Nil(t, err)
 			}
 		})
