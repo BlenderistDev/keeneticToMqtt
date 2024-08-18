@@ -6,19 +6,16 @@ import (
 	"keeneticToMqtt/internal/clients/keenetic/auth"
 )
 
-type AuthRoundTripper struct {
-	proxied http.RoundTripper
+type roundTripper interface {
+	RoundTrip(*http.Request) (*http.Response, error)
+}
+
+type authRoundTripper struct {
+	proxied roundTripper
 	auth    *auth.Auth
 }
 
-func (k *Keenetic) NewAuthRoundTripper(proxied http.RoundTripper, auth *auth.Auth) http.RoundTripper {
-	return &AuthRoundTripper{
-		proxied: proxied,
-		auth:    auth,
-	}
-}
-
-func (rt *AuthRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (rt *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := rt.auth.RefreshAuth(); err != nil {
 		return nil, err
 	}

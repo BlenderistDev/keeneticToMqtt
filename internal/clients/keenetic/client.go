@@ -23,7 +23,7 @@ func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, passwor
 	t := &http.Transport{}
 
 	var rt http.RoundTripper
-	rt = &AuthRoundTripper{
+	rt = &authRoundTripper{
 		proxied: t,
 		auth:    auth,
 	}
