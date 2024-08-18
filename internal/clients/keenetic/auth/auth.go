@@ -9,18 +9,32 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/http/cookiejar"
 
 	"keeneticToMqtt/internal/errs"
 )
 
+//go:generate mockgen -source=auth.go -destination=../../../../test/mocks/gomock/clients/keenetic/auth/auth.go
+
+const (
+	authUrl            = "/auth"
+	ndmChallengeHeader = "X-NDM-Challenge"
+	ndmRealmHeader     = "X-NDM-Realm"
+)
+
+type (
+	client interface {
+		Do(req *http.Request) (*http.Response, error)
+	}
+)
+
+// Auth struct for keenetic auth.
 type Auth struct {
 	login, password, host string
-	cookiejar             *cookiejar.Jar
-	client                *http.Client
+	client                client
 }
 
-func NewAuth(host, login, password string, cookiejar *cookiejar.Jar) *Auth {
+// NewAuth creates new Auth.
+func NewAuth(host, login, password string, cookiejar http.CookieJar) *Auth {
 	return &Auth{
 		login:    login,
 		password: password,
@@ -29,6 +43,9 @@ func NewAuth(host, login, password string, cookiejar *cookiejar.Jar) *Auth {
 	}
 }
 
+// RefreshAuth refresh keenetic auth.
+// try GET /auth. If 200 - OK.
+// IF 401 - try POST /auth with headers as password salt.
 func (a *Auth) RefreshAuth() error {
 	realm, challenge, err := a.checkAuth()
 	switch {
@@ -44,7 +61,7 @@ func (a *Auth) RefreshAuth() error {
 }
 
 func (a *Auth) checkAuth() (realm, challenge string, err error) {
-	req, err := http.NewRequest(http.MethodGet, a.host+"/auth", nil)
+	req, err := http.NewRequest(http.MethodGet, a.host+authUrl, nil)
 	if err != nil {
 		err = fmt.Errorf("build request error in checkauth request: %w", err)
 		return
@@ -58,8 +75,8 @@ func (a *Auth) checkAuth() (realm, challenge string, err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		challenge = resp.Header.Get("X-NDM-Challenge")
-		realm = resp.Header.Get("X-NDM-Realm")
+		challenge = resp.Header.Get(ndmChallengeHeader)
+		realm = resp.Header.Get(ndmRealmHeader)
 		err = errs.ErrUnauthorized
 		return
 	}
