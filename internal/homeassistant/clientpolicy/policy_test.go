@@ -3,7 +3,6 @@ package clientpolicy
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -23,6 +22,8 @@ func TestClientPolicy_SendDiscoveryMessage(t *testing.T) {
 	)
 	someErr := errors.New("some error")
 	policies := []string{name}
+
+	client := dto.Client{Mac: mac, Name: name}
 
 	tests := []struct {
 		name          string
@@ -87,7 +88,7 @@ func TestClientPolicy_SendDiscoveryMessage(t *testing.T) {
 				policyStorage:   tt.policyStorage(),
 			}
 
-			err := policy.SendDiscoveryMessage(mac, name)
+			err := policy.SendDiscoveryMessage(client)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
@@ -97,60 +98,49 @@ func TestClientPolicy_SendDiscoveryMessage(t *testing.T) {
 	}
 }
 
-func TestClientPermit_SendState(t *testing.T) {
+func TestClientPermit_GetState(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	const (
-		mac       = "mac"
-		policy    = "policy"
-		name      = "name"
-		basetopic = "basetopic"
+		mac    = "mac"
+		policy = "policy"
+		name   = "name"
 	)
 
 	tests := []struct {
-		name        string
-		expectedErr error
-		mqtt        func() mqtt
-		client      dto.Client
+		name     string
+		expected string
+		client   dto.Client
 	}{
 		{
-			name: "success policy send",
-			mqtt: func() mqtt {
-				mqtt := mock_clientpolicy.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					SendMessage(gomock.Eq("basetopic/mac_policy/state"), gomock.Eq(policy))
-
-				return mqtt
-			},
+			name: "success policy get",
 			client: dto.Client{
 				Mac:    mac,
 				Policy: policy,
 				Name:   name,
-				Permit: false,
 			},
+			expected: policy,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			clientPolicy := ClientPolicy{
-				basetopic: basetopic,
-				mqtt:      tt.mqtt(),
-			}
+			clientPolicy := ClientPolicy{}
 
-			clientPolicy.SendState(tt.client)
+			res, err := clientPolicy.GetState(tt.client)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.expected, res)
 		})
 	}
 }
 
-func TestClientPermit_RunConsumer(t *testing.T) {
+func TestClientPermit_Consume(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	const (
 		mac       = "mac"
-		policy    = "policy"
 		name      = "name"
 		basetopic = "basetopic"
 	)
@@ -160,26 +150,13 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 	tests := []struct {
 		name         string
 		expectedErr  error
-		mqtt         func(chan string) mqtt
-		logger       func() logger
 		client       dto.Client
 		accessUpdate func() accessUpdate
 		payload      string
 	}{
 		{
-			name: "run policy consumer",
-			mqtt: func(ch chan string) mqtt {
-				mqtt := mock_clientpolicy.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					Subscribe(gomock.Eq("basetopic/mac_policy/command")).
-					Return(ch)
-				return mqtt
-			},
-			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
-			},
+			name:   "run policy consumer",
+			client: dto.Client{Mac: mac},
 			accessUpdate: func() accessUpdate {
 				accessUpdate := mock_clientpolicy.NewMockaccessUpdate(ctrl)
 				accessUpdate.EXPECT().
@@ -187,38 +164,17 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 					Return(nil)
 				return accessUpdate
 			},
-			logger: func() logger {
-				logger := mock_clientpolicy.NewMocklogger(ctrl)
-				return logger
-			},
 			payload: name,
 		},
 		{
-			name: "error while setting permit",
-			mqtt: func(ch chan string) mqtt {
-				mqtt := mock_clientpolicy.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					Subscribe(gomock.Eq("basetopic/mac_policy/command")).
-					Return(ch)
-				return mqtt
-			},
-			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
-				Permit: false,
-			},
+			name:   "error while setting permit",
+			client: dto.Client{Mac: mac},
 			accessUpdate: func() accessUpdate {
 				accessUpdate := mock_clientpolicy.NewMockaccessUpdate(ctrl)
 				accessUpdate.EXPECT().
 					SetPolicy(gomock.Eq(mac), gomock.Eq(name)).
 					Return(someErr)
 				return accessUpdate
-			},
-			logger: func() logger {
-				logger := mock_clientpolicy.NewMocklogger(ctrl)
-				logger.EXPECT().Error(gomock.Eq("client error while setting policy"), gomock.Eq("error"), gomock.Eq(someErr))
-				return logger
 			},
 			payload:     name,
 			expectedErr: someErr,
@@ -229,23 +185,19 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			discovery := mock_clientpolicy.NewMockdiscovery(ctrl)
 			policyStorage := mock_clientpolicy.NewMockpolicyStorage(ctrl)
-			ch := make(chan string)
-			permit := NewClientPolicy(
+			policy := NewClientPolicy(
 				basetopic,
 				discovery,
-				tt.mqtt(ch),
 				tt.accessUpdate(),
 				policyStorage,
-				tt.logger(),
 			)
 
-			go permit.RunConsumer(mac)
-
-			ch <- tt.payload
-
-			ticker := time.NewTicker(time.Millisecond)
-			<-ticker.C
-			return
+			err := policy.Consume(tt.client, tt.payload)
+			if tt.expectedErr != nil {
+				assert.ErrorIs(t, err, tt.expectedErr)
+			} else {
+				assert.Nil(t, err)
+			}
 		})
 	}
 }

@@ -22,13 +22,6 @@ type (
 	accessUpdate interface {
 		SetPermit(mac string, permit bool) error
 	}
-	mqtt interface {
-		Subscribe(topic string) chan string
-		SendMessage(topic, message string)
-	}
-	logger interface {
-		Error(msg string, args ...any)
-	}
 )
 
 // ClientPermit struct for handle home assistant client permit entities.
@@ -36,70 +29,63 @@ type ClientPermit struct {
 	basetopic       string
 	discoveryClient discovery
 	accessUpdate    accessUpdate
-	mqtt            mqtt
-	logger          logger
 }
 
 // NewClientPermit creates new ClientPermit.
 func NewClientPermit(
 	basetopic string,
 	discoveryClient discovery,
-	mqtt mqtt,
 	accessUpdate accessUpdate,
-	logger logger,
 ) *ClientPermit {
 	return &ClientPermit{
 		basetopic:       basetopic,
 		discoveryClient: discoveryClient,
 		accessUpdate:    accessUpdate,
-		mqtt:            mqtt,
-		logger:          logger,
 	}
 }
 
 // SendDiscoveryMessage sending home assistant discovery message.
-func (p *ClientPermit) SendDiscoveryMessage(mac, name string) error {
-	commandTopic := p.getCommandTopic(mac)
-	stateTopic := p.getStateTopic(mac)
+func (p *ClientPermit) SendDiscoveryMessage(client dto.Client) error {
+	commandTopic := p.GetCommandTopic(client)
+	stateTopic := p.GetStateTopic(client)
 
-	if err := p.discoveryClient.SendDiscoverySwitch(commandTopic, stateTopic, name, name+"_"+entityTypeName); err != nil {
+	if err := p.discoveryClient.SendDiscoverySwitch(commandTopic, stateTopic, client.Name, client.Name+"_"+entityTypeName); err != nil {
 		return fmt.Errorf("ClientPermit SendDiscoveryMessage error: %w", err)
 	}
 
 	return nil
 }
 
-func (p *ClientPermit) getStateTopic(mac string) string {
-	mac = strings.Replace(mac, ":", "_", -1)
+// GetStateTopic returns state topic.
+func (p *ClientPermit) GetStateTopic(client dto.Client) string {
+	mac := strings.Replace(client.Mac, ":", "_", -1)
 	return fmt.Sprintf("%s/%s_%s/state", p.basetopic, mac, entityTypeName)
 }
 
-func (p *ClientPermit) getCommandTopic(mac string) string {
-	mac = strings.Replace(mac, ":", "_", -1)
+// GetCommandTopic returns command topic.
+func (p *ClientPermit) GetCommandTopic(client dto.Client) string {
+	mac := strings.Replace(client.Mac, ":", "_", -1)
 	return fmt.Sprintf("%s/%s_%s/command", p.basetopic, mac, entityTypeName)
 }
 
-// SendState sends client permit state.
-func (p *ClientPermit) SendState(client dto.Client) {
+// GetState returns client permit state.
+func (p *ClientPermit) GetState(client dto.Client) (string, error) {
 	msg := offPayload
 	if client.Permit {
 		msg = onPayload
 	}
-	p.mqtt.SendMessage(p.getStateTopic(client.Mac), msg)
+	return msg, nil
 }
 
-// RunConsumer runs client permit consumer.
-func (p *ClientPermit) RunConsumer(mac string) {
-	ch := p.mqtt.Subscribe(p.getCommandTopic(mac))
-
-	for {
-		message := <-ch
-		permit := true
-		if message == offPayload {
-			permit = false
-		}
-		if err := p.accessUpdate.SetPermit(mac, permit); err != nil {
-			p.logger.Error("client error while setting permit", "error", err)
-		}
+// Consume consumes message.
+func (p *ClientPermit) Consume(client dto.Client, message string) error {
+	permit := true
+	if message == offPayload {
+		permit = false
 	}
+	if err := p.accessUpdate.SetPermit(client.Mac, permit); err != nil {
+		return fmt.Errorf("client error while setting permit: %w", err)
+	}
+
+	return nil
 }

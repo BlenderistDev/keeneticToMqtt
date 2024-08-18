@@ -54,8 +54,8 @@ func NewContainer() (*Container, error) {
 	cont.ClientListService = clientlist.NewClientList(listClient, cont.Config.Homeassistant.WhiteList)
 	cont.DiscoveryService = discovery.NewDiscovery("", cont.Config.Homeassistant.DeviceID, mqttClient)
 
-	clientPolicy := clientpolicy.NewClientPolicy(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, mqttClient, policyClient, cont.PolicyStorage, cont.Logger)
-	clientPermit := clientpermit.NewClientPermit(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, mqttClient, policyClient, cont.Logger)
+	clientPolicy := clientpolicy.NewClientPolicy(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, policyClient, cont.PolicyStorage)
+	clientPermit := clientpermit.NewClientPermit(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, policyClient)
 
 	cont.EntityManager = homeassistant.NewEntityManager(
 		[]homeassistant.Entity{
@@ -63,6 +63,7 @@ func NewContainer() (*Container, error) {
 			clientPermit,
 		},
 		cont.ClientListService,
+		mqttClient,
 		cont.Config.Homeassistant.UpdateInterval,
 		cont.Logger,
 	)

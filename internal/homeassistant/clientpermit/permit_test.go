@@ -3,7 +3,6 @@ package clientpermit
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -20,6 +19,7 @@ func TestClientPermit_SendDiscoveryMessage(t *testing.T) {
 		name      = "name"
 		basetopic = "basetopic"
 	)
+	client := dto.Client{Mac: mac, Name: name}
 	someErr := errors.New("some error")
 
 	tests := []struct {
@@ -59,7 +59,7 @@ func TestClientPermit_SendDiscoveryMessage(t *testing.T) {
 				discoveryClient: tt.discovery(),
 			}
 
-			err := perimt.SendDiscoveryMessage(mac, name)
+			err := perimt.SendDiscoveryMessage(client)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
@@ -69,77 +69,48 @@ func TestClientPermit_SendDiscoveryMessage(t *testing.T) {
 	}
 }
 
-func TestClientPermit_SendState(t *testing.T) {
+func TestClientPermit_GetState(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	const (
-		mac       = "mac"
-		policy    = "policy"
-		name      = "name"
-		basetopic = "basetopic"
-	)
-
 	tests := []struct {
 		name        string
+		expected    string
 		expectedErr error
-		mqtt        func() mqtt
 		client      dto.Client
 	}{
 		{
-			name: "success send permit false",
-			mqtt: func() mqtt {
-				mqtt := mock_clientpermit.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					SendMessage(gomock.Eq("basetopic/mac_permit/state"), gomock.Eq(offPayload))
-
-				return mqtt
-			},
+			name: "success get permit false",
 			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
 				Permit: false,
 			},
+			expected: "OFF",
 		},
 		{
-			name: "success send permit true",
-			mqtt: func() mqtt {
-				mqtt := mock_clientpermit.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					SendMessage(gomock.Eq("basetopic/mac_permit/state"), gomock.Eq(onPayload))
-
-				return mqtt
-			},
+			name: "success get permit true",
 			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
 				Permit: true,
 			},
+			expected: "ON",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			permit := ClientPermit{
-				basetopic: basetopic,
-				mqtt:      tt.mqtt(),
-			}
-
-			permit.SendState(tt.client)
+			permit := ClientPermit{}
+			state, err := permit.GetState(tt.client)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.expected, state)
 		})
 	}
 }
 
-func TestClientPermit_RunConsumer(t *testing.T) {
+func TestClientPermit_Consume(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	const (
 		mac       = "mac"
-		policy    = "policy"
-		name      = "name"
 		basetopic = "basetopic"
 	)
 
@@ -148,27 +119,13 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 	tests := []struct {
 		name         string
 		expectedErr  error
-		mqtt         func(chan string) mqtt
-		logger       func() logger
 		client       dto.Client
 		accessUpdate func() accessUpdate
 		payload      string
 	}{
 		{
-			name: "set permit to false",
-			mqtt: func(ch chan string) mqtt {
-				mqtt := mock_clientpermit.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					Subscribe(gomock.Eq("basetopic/mac_permit/command")).
-					Return(ch)
-				return mqtt
-			},
-			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
-				Permit: false,
-			},
+			name:   "set permit to false",
+			client: dto.Client{Mac: mac},
 			accessUpdate: func() accessUpdate {
 				accessUpdate := mock_clientpermit.NewMockaccessUpdate(ctrl)
 				accessUpdate.EXPECT().
@@ -176,27 +133,11 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 					Return(nil)
 				return accessUpdate
 			},
-			logger: func() logger {
-				logger := mock_clientpermit.NewMocklogger(ctrl)
-				return logger
-			},
 			payload: offPayload,
 		},
 		{
-			name: "set permit to true",
-			mqtt: func(ch chan string) mqtt {
-				mqtt := mock_clientpermit.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					Subscribe(gomock.Eq("basetopic/mac_permit/command")).
-					Return(ch)
-				return mqtt
-			},
-			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
-				Permit: false,
-			},
+			name:   "set permit to true",
+			client: dto.Client{Mac: mac},
 			accessUpdate: func() accessUpdate {
 				accessUpdate := mock_clientpermit.NewMockaccessUpdate(ctrl)
 				accessUpdate.EXPECT().
@@ -204,38 +145,17 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 					Return(nil)
 				return accessUpdate
 			},
-			logger: func() logger {
-				logger := mock_clientpermit.NewMocklogger(ctrl)
-				return logger
-			},
 			payload: onPayload,
 		},
 		{
-			name: "error while setting permit",
-			mqtt: func(ch chan string) mqtt {
-				mqtt := mock_clientpermit.NewMockmqtt(ctrl)
-				mqtt.EXPECT().
-					Subscribe(gomock.Eq("basetopic/mac_permit/command")).
-					Return(ch)
-				return mqtt
-			},
-			client: dto.Client{
-				Mac:    mac,
-				Policy: policy,
-				Name:   name,
-				Permit: false,
-			},
+			name:   "error while setting permit",
+			client: dto.Client{Mac: mac},
 			accessUpdate: func() accessUpdate {
 				accessUpdate := mock_clientpermit.NewMockaccessUpdate(ctrl)
 				accessUpdate.EXPECT().
 					SetPermit(gomock.Eq(mac), gomock.Eq(false)).
 					Return(someErr)
 				return accessUpdate
-			},
-			logger: func() logger {
-				logger := mock_clientpermit.NewMocklogger(ctrl)
-				logger.EXPECT().Error(gomock.Eq("client error while setting permit"), gomock.Eq("error"), someErr)
-				return logger
 			},
 			payload:     offPayload,
 			expectedErr: someErr,
@@ -245,22 +165,18 @@ func TestClientPermit_RunConsumer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			discovery := mock_clientpermit.NewMockdiscovery(ctrl)
-			ch := make(chan string)
 			permit := NewClientPermit(
 				basetopic,
 				discovery,
-				tt.mqtt(ch),
 				tt.accessUpdate(),
-				tt.logger(),
 			)
 
-			go permit.RunConsumer(mac)
-
-			ch <- tt.payload
-
-			ticker := time.NewTicker(time.Millisecond)
-			<-ticker.C
-			return
+			err := permit.Consume(tt.client, tt.payload)
+			if tt.expectedErr != nil {
+				assert.ErrorIs(t, err, tt.expectedErr)
+			} else {
+				assert.Nil(t, err)
+			}
 		})
 	}
 }
