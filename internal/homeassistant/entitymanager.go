@@ -29,6 +29,7 @@ type EntityManager struct {
 	pollingInterval time.Duration
 	logger          *slog.Logger
 	clients         map[string]dto.Client
+	entityStates    map[Entity]map[string]string
 }
 
 func NewEntityManager(
@@ -45,6 +46,7 @@ func NewEntityManager(
 		pollingInterval: pollingInterval,
 		logger:          logger,
 		clients:         map[string]dto.Client{},
+		entityStates:    make(map[Entity]map[string]string),
 	}
 }
 
@@ -99,6 +101,17 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 					"error", err,
 				)
 			}
+			entityStorage, ok := m.entityStates[entity]
+			if ok {
+				storageState, ok := entityStorage[client.Mac]
+				if ok && storageState == state {
+					return
+				}
+			}
+			if m.entityStates[entity] == nil {
+				m.entityStates[entity] = make(map[string]string)
+			}
+			m.entityStates[entity][client.Mac] = state
 			m.mqtt.SendMessage(entity.GetStateTopic(client), state)
 		}
 	}
