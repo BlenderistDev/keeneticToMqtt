@@ -9,6 +9,7 @@ import (
 
 const (
 	defaultDiscoveryPrefix = "homeassistant"
+	manufacturer           = "BlenderistDev keeneticToMqtt"
 )
 
 type (
@@ -57,7 +58,7 @@ func (d *Discovery) SendDiscoverySelect(commandTopic, stateTopic, deviceName, na
 		Name:         name,
 		Options:      options,
 		Device: device{
-			Manufacturer: "BlenderistDev keeneticToMqtt",
+			Manufacturer: manufacturer,
 			Name:         deviceName,
 		},
 	}
@@ -83,7 +84,7 @@ func (d *Discovery) SendDiscoverySwitch(commandTopic, stateTopic, deviceName, na
 		StateTopic:   stateTopic,
 		Name:         name,
 		Device: device{
-			Manufacturer: "BlenderistDev keeneticToMqtt",
+			Manufacturer: manufacturer,
 			Name:         deviceName,
 		},
 	}
@@ -93,6 +94,32 @@ func (d *Discovery) SendDiscoverySwitch(commandTopic, stateTopic, deviceName, na
 		return fmt.Errorf("error while marshal select discovery config: %w", err)
 	}
 	d.sendDiscovery("switch", d.deviceID+name, string(configStr))
+
+	return nil
+}
+
+// SendDiscoverySensor sends home assistant discovery message for sensor.
+func (d *Discovery) SendDiscoverySensor(stateTopic, deviceName, name, unit string) error {
+	config := struct {
+		StateTopic        string `json:"state_topic"`
+		Name              string `json:"name"`
+		Device            device
+		UnitOfMeasurement string `json:"unit_of_measurement"`
+	}{
+		StateTopic:        stateTopic,
+		Name:              name,
+		UnitOfMeasurement: unit,
+		Device: device{
+			Manufacturer: manufacturer,
+			Name:         deviceName,
+		},
+	}
+
+	configStr, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("error while marshal select discovery config: %w", err)
+	}
+	d.sendDiscovery("sensor", d.deviceID+name, string(configStr))
 
 	return nil
 }

@@ -55,8 +55,10 @@ func (l *ClientList) GetClientList() ([]dto.Client, error) {
 			continue
 		}
 		client := dto.Client{
-			Mac:  device.Mac,
-			Name: device.Name,
+			Mac:     device.Mac,
+			Name:    device.Name,
+			TxBytes: device.TxBytes,
+			RxBytes: device.RxBytes,
 		}
 
 		policy := policyMap[device.Mac]
