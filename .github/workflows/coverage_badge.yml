@@ -1,9 +1,10 @@
 name: Generate code coverage badge
 
 on:
+  push:
+    branches: [ "master" ]
   pull_request:
-    branches:
-      - master
+    branches: [ "master" ]
 
 jobs:
   test:
