@@ -1,4 +1,4 @@
-package txbytes
+package rxbytes
 
 import (
 	"errors"
@@ -7,12 +7,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-	mock_txbytes "keeneticToMqtt/test/mocks/gomock/homeassistant/txbytes"
-
 	"keeneticToMqtt/internal/dto"
+	mock_rxbytes "keeneticToMqtt/test/mocks/gomock/homeassistant/rxbytes"
 )
 
-func TestTxBytes_SendDiscoveryMessage(t *testing.T) {
+func TestRxBytes_SendDiscoveryMessage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -33,12 +32,12 @@ func TestTxBytes_SendDiscoveryMessage(t *testing.T) {
 		{
 			name: "success send discovery message",
 			discovery: func() discovery {
-				discovery := mock_txbytes.NewMockdiscovery(ctrl)
+				discovery := mock_rxbytes.NewMockdiscovery(ctrl)
 				discovery.EXPECT().
 					SendDiscoverySensor(
-						gomock.Eq("basetopic/mac_txbytes/state"),
+						gomock.Eq("basetopic/mac_rxbytes/state"),
 						gomock.Eq(name),
-						gomock.Eq("name_txbytes"),
+						gomock.Eq("name_rxbytes"),
 						gomock.Eq(unit),
 					).
 					Return(nil)
@@ -49,12 +48,12 @@ func TestTxBytes_SendDiscoveryMessage(t *testing.T) {
 		{
 			name: "error while send discovery message",
 			discovery: func() discovery {
-				discovery := mock_txbytes.NewMockdiscovery(ctrl)
+				discovery := mock_rxbytes.NewMockdiscovery(ctrl)
 				discovery.EXPECT().
 					SendDiscoverySensor(
-						gomock.Eq("basetopic/mac_txbytes/state"),
+						gomock.Eq("basetopic/mac_rxbytes/state"),
 						gomock.Eq(name),
-						gomock.Eq("name_txbytes"),
+						gomock.Eq("name_rxbytes"),
 						gomock.Eq(unit),
 					).
 					Return(someErr)
@@ -67,8 +66,8 @@ func TestTxBytes_SendDiscoveryMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			txBytes := NewTxBytes(basetopic, tt.discovery())
-			err := txBytes.SendDiscoveryMessage(client)
+			rxBytes := NewRxBytes(basetopic, tt.discovery())
+			err := rxBytes.SendDiscoveryMessage(client)
 			if tt.expectedErr != nil {
 				assert.ErrorIs(t, err, tt.expectedErr)
 			} else {
@@ -78,13 +77,13 @@ func TestTxBytes_SendDiscoveryMessage(t *testing.T) {
 	}
 }
 
-func TestTxBytes_GetState(t *testing.T) {
+func TestRxBytes_GetState(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	const (
 		mac     = "mac"
-		txBytes = 123
+		rxBytes = 123
 		name    = "name"
 	)
 
@@ -94,34 +93,34 @@ func TestTxBytes_GetState(t *testing.T) {
 		client   dto.Client
 	}{
 		{
-			name: "success txbytes get",
+			name: "success rxbytes get",
 			client: dto.Client{
 				Mac:     mac,
-				TxBytes: txBytes,
+				RxBytes: rxBytes,
 				Name:    name,
 			},
-			expected: strconv.Itoa(txBytes),
+			expected: strconv.Itoa(rxBytes),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			txBytes := TxBytes{}
-			res, err := txBytes.GetState(tt.client)
+			rxBytes := RxBytes{}
+			res, err := rxBytes.GetState(tt.client)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.expected, res)
 		})
 	}
 }
 
-func TestTxBytes_Consume(t *testing.T) {
-	txBytes := TxBytes{}
+func TestRxBytes_Consume(t *testing.T) {
+	rxBytes := RxBytes{}
 
-	err := txBytes.Consume(dto.Client{}, "")
+	err := rxBytes.Consume(dto.Client{}, "")
 	assert.Nil(t, err)
 }
 
-func TestTxBytes_GetCommandTopic(t *testing.T) {
-	txBytes := TxBytes{}
-	assert.Empty(t, txBytes.GetCommandTopic(dto.Client{}))
+func TestRxBytes_GetCommandTopic(t *testing.T) {
+	rxBytes := RxBytes{}
+	assert.Empty(t, rxBytes.GetCommandTopic(dto.Client{}))
 }

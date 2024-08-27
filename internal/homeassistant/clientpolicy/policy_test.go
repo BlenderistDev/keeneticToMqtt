@@ -98,7 +98,7 @@ func TestClientPolicy_SendDiscoveryMessage(t *testing.T) {
 	}
 }
 
-func TestClientPermit_GetState(t *testing.T) {
+func TestClientPolicy_GetState(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -135,7 +135,7 @@ func TestClientPermit_GetState(t *testing.T) {
 	}
 }
 
-func TestClientPermit_Consume(t *testing.T) {
+func TestClientPolicy_Consume(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -167,7 +167,7 @@ func TestClientPermit_Consume(t *testing.T) {
 			payload: name,
 		},
 		{
-			name:   "error while setting permit",
+			name:   "error while setting policy",
 			client: dto.Client{Mac: mac},
 			accessUpdate: func() accessUpdate {
 				accessUpdate := mock_clientpolicy.NewMockaccessUpdate(ctrl)

@@ -15,6 +15,7 @@ import (
 	"keeneticToMqtt/internal/homeassistant"
 	"keeneticToMqtt/internal/homeassistant/clientpermit"
 	"keeneticToMqtt/internal/homeassistant/clientpolicy"
+	"keeneticToMqtt/internal/homeassistant/rxbytes"
 	"keeneticToMqtt/internal/homeassistant/txbytes"
 	"keeneticToMqtt/internal/services/clientlist"
 	"keeneticToMqtt/internal/services/discovery"
@@ -58,12 +59,14 @@ func NewContainer() (*Container, error) {
 	clientPolicy := clientpolicy.NewClientPolicy(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, policyClient, cont.PolicyStorage)
 	clientPermit := clientpermit.NewClientPermit(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService, policyClient)
 	txBytes := txbytes.NewTxBytes(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService)
+	rxBytes := rxbytes.NewRxBytes(cont.Config.Mqtt.BaseTopic, cont.DiscoveryService)
 
 	cont.EntityManager = homeassistant.NewEntityManager(
 		[]homeassistant.Entity{
 			clientPolicy,
 			clientPermit,
 			txBytes,
+			rxBytes,
 		},
 		cont.ClientListService,
 		mqttClient,
