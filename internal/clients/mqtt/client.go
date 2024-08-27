@@ -43,8 +43,8 @@ func NewClient(broker, clientID, username, password string) *Client {
 	}
 }
 
-func (c *Client) SendMessage(topic, message string) {
-	token := c.client.Publish(topic, 0, false, message)
+func (c *Client) SendMessage(topic, message string, retained bool) {
+	token := c.client.Publish(topic, 0, retained, message)
 	token.Wait()
 }
 

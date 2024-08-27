@@ -38,13 +38,13 @@ func (m *MockmqttClient) EXPECT() *MockmqttClientMockRecorder {
 }
 
 // SendMessage mocks base method.
-func (m *MockmqttClient) SendMessage(topic, message string) {
+func (m *MockmqttClient) SendMessage(topic, message string, retained bool) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SendMessage", topic, message)
+	m.ctrl.Call(m, "SendMessage", topic, message, retained)
 }
 
 // SendMessage indicates an expected call of SendMessage.
-func (mr *MockmqttClientMockRecorder) SendMessage(topic, message any) *gomock.Call {
+func (mr *MockmqttClientMockRecorder) SendMessage(topic, message, retained any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockmqttClient)(nil).SendMessage), topic, message)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockmqttClient)(nil).SendMessage), topic, message, retained)
 }

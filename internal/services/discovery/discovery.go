@@ -14,7 +14,7 @@ const (
 
 type (
 	mqttClient interface {
-		SendMessage(topic, message string)
+		SendMessage(topic, message string, retained bool)
 	}
 	device struct {
 		Manufacturer string `json:"manufacturer"`
@@ -128,6 +128,7 @@ func (d *Discovery) sendDiscovery(component, deviceID, config string) {
 	d.mqtt.SendMessage(
 		d.buildDiscoveryTopic(component, deviceID),
 		config,
+		true,
 	)
 }
 

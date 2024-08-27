@@ -11,7 +11,7 @@ import (
 
 type mqtt interface {
 	Subscribe(topic string) chan string
-	SendMessage(topic, message string)
+	SendMessage(topic, message string, retained bool)
 }
 
 type Entity interface {
@@ -112,7 +112,7 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 				m.entityStates[entity] = make(map[string]string)
 			}
 			m.entityStates[entity][client.Mac] = state
-			m.mqtt.SendMessage(entity.GetStateTopic(client), state)
+			m.mqtt.SendMessage(entity.GetStateTopic(client), state, false)
 		}
 	}
 }
