@@ -1,5 +1,5 @@
 # KeeneticToMqtt
-![Coverage](https://img.shields.io/badge/Coverage-64.8%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-63.6%25-yellow)
 
 KeeneticToMqtt is a bridge beetwen keeneticOS and mqtt. It allows you to do some api calls through mqtt commands.
 
