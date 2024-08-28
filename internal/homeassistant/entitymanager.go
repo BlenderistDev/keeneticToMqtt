@@ -105,7 +105,7 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 			if ok {
 				storageState, ok := entityStorage[client.Mac]
 				if ok && storageState == state {
-					return
+					continue
 				}
 			}
 			if m.entityStates[entity] == nil {
