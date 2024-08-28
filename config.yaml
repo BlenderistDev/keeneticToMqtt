@@ -21,7 +21,7 @@ options:
     updateInterval: 10s
     whitelist: []
 schema:
-  log_level: list(trace|debug|info|notice|warning|error|fatal)?
+  logLevel: list(debug|info|warning|error)?
   keenetic:
     host: str
     login: str

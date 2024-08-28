@@ -11,6 +11,7 @@ import (
 var conFile string
 
 type Config struct {
+	LogLevel      string        `mapstructure:"logLevel"`
 	Keenetic      Keenetic      `mapstructure:"keenetic"`
 	Mqtt          Mqtt          `mapstructure:"mqtt"`
 	Homeassistant HomeAssistant `mapstructure:"homeassistant"`

@@ -17,6 +17,7 @@ import (
 	"keeneticToMqtt/internal/homeassistant/clientpolicy"
 	"keeneticToMqtt/internal/homeassistant/rxbytes"
 	"keeneticToMqtt/internal/homeassistant/txbytes"
+	"keeneticToMqtt/internal/logger"
 	"keeneticToMqtt/internal/services/clientlist"
 	"keeneticToMqtt/internal/services/discovery"
 	"keeneticToMqtt/internal/storages/policy"
@@ -33,14 +34,14 @@ type Container struct {
 
 func NewContainer() (*Container, error) {
 	cont := Container{}
-	cont.Logger = slog.Default()
 
 	conf, err := config.NewDefaultConfig()
 	if err != nil {
 		return nil, err
 	}
-
 	cont.Config = conf
+
+	cont.Logger = logger.NewLogger(cont.Config.LogLevel)
 
 	cookie, _ := cookiejar.New(&cookiejar.Options{})
 
