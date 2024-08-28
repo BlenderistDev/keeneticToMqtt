@@ -8,12 +8,19 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+type logger interface {
+	Error(msg string, args ...any)
+	Info(msg string, args ...any)
+	Debug(msg string, args ...any)
+}
+
 type Client struct {
 	topicPrefix string
 	client      mqtt.Client
+	logger      logger
 }
 
-func NewClient(broker, clientID, username, password string) *Client {
+func NewClient(broker, clientID, username, password string, log logger) *Client {
 	var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		fmt.Printf("TOPIC: %s\n", msg.Topic())
 		fmt.Printf("MSG: %s\n", msg.Payload())
@@ -40,12 +47,34 @@ func NewClient(broker, clientID, username, password string) *Client {
 
 	return &Client{
 		client: c,
+		logger: log,
 	}
 }
 
 func (c *Client) SendMessage(topic, message string, retained bool) {
+	c.logger.Debug("start sending mqtt message",
+		"topic", topic,
+		"message", message,
+		"retained", retained,
+	)
+
 	token := c.client.Publish(topic, 0, retained, message)
-	token.Wait()
+	<-token.Done()
+	if err := token.Error(); err != nil {
+		c.logger.Error("error sending mqtt message",
+			"error", err,
+			"topic", topic,
+			"message", message,
+			"retained", retained,
+		)
+		return
+	}
+
+	c.logger.Info("sending mqtt message",
+		"topic", topic,
+		"message", message,
+		"retained", retained,
+	)
 }
 
 func (c *Client) Subscribe(topic string) chan string {

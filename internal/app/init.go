@@ -50,7 +50,7 @@ func NewContainer() (*Container, error) {
 	policyClient := accessupdate.NewAccessUpdate(cont.Config.Keenetic.Host, keeneticClient)
 	policyList := policylist.NewPolicyList(cont.Config.Keenetic.Host, keeneticClient)
 	listClient := list.NewList(cont.Config.Keenetic.Host, keeneticClient)
-	mqttClient := mqtt.NewClient(cont.Config.Mqtt.Host, cont.Config.Mqtt.ClientID, cont.Config.Mqtt.Login, cont.Config.Mqtt.Password)
+	mqttClient := mqtt.NewClient(cont.Config.Mqtt.Host, cont.Config.Mqtt.ClientID, cont.Config.Mqtt.Login, cont.Config.Mqtt.Password, cont.Logger)
 
 	cont.PolicyStorage = policy.NewStorage(policyList, time.Second*10, cont.Logger)
 
