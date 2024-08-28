@@ -15,6 +15,10 @@ func main() {
 		panic(fmt.Errorf("error while creating container: %w", err))
 	}
 
+	if err = cont.Mqtt.Connect(); err != nil {
+		panic(fmt.Errorf("error while connecting to mqtt: %w", err))
+	}
+
 	entityManagerDone := cont.EntityManager.Run()
 	policyDone := cont.PolicyStorage.Run()
 
