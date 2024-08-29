@@ -2,18 +2,19 @@ package homeassistant
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"keeneticToMqtt/internal/dto"
-	"keeneticToMqtt/internal/services/clientlist"
 )
+
+//go:generate mockgen -source=entitymanager.go -destination=../../test/mocks/gomock/homeassistant/entitymanager.go
 
 type mqtt interface {
 	Subscribe(topic string) chan string
 	SendMessage(topic, message string, retained bool)
 }
 
+// Entity home assistant entity.
 type Entity interface {
 	SendDiscoveryMessage(client dto.Client) error
 	Consume(client dto.Client, message string) error
@@ -22,22 +23,33 @@ type Entity interface {
 	GetState(client dto.Client) (string, error)
 }
 
-type EntityManager struct {
-	entities        []Entity
-	clientList      *clientlist.ClientList
-	mqtt            mqtt
-	pollingInterval time.Duration
-	logger          *slog.Logger
-	clients         map[string]dto.Client
-	entityStates    map[Entity]map[string]string
+type clientList interface {
+	GetClientList() ([]dto.Client, error)
 }
 
+type logger interface {
+	Info(msg string, args ...any)
+	Error(msg string, args ...any)
+}
+
+// EntityManager entity manager for keenetic client entities in home assistant.
+type EntityManager struct {
+	entities        []Entity
+	clientList      clientList
+	mqtt            mqtt
+	pollingInterval time.Duration
+	logger          logger
+	clients         map[string]dto.Client
+	entityStates    map[string]map[string]string
+}
+
+// NewEntityManager creates new EntityManager.
 func NewEntityManager(
 	entities []Entity,
-	clientList *clientlist.ClientList,
+	clientList clientList,
 	mqtt mqtt,
 	pollingInterval time.Duration,
-	logger *slog.Logger,
+	logger logger,
 ) *EntityManager {
 	return &EntityManager{
 		entities:        entities,
@@ -46,10 +58,11 @@ func NewEntityManager(
 		pollingInterval: pollingInterval,
 		logger:          logger,
 		clients:         map[string]dto.Client{},
-		entityStates:    make(map[Entity]map[string]string),
+		entityStates:    make(map[string]map[string]string),
 	}
 }
 
+// Run entity updates and command consumer.
 func (m *EntityManager) Run() chan struct{} {
 	done := make(chan struct{})
 	ticker := time.NewTicker(m.pollingInterval)
@@ -90,9 +103,11 @@ func (m *EntityManager) update() {
 	return
 }
 
+// updateEntitiesState sends mqtt messages with updates to state topic only if state changes.
 func (m *EntityManager) updateEntitiesState(client dto.Client) {
 	for _, entity := range m.entities {
-		if entity.GetStateTopic(client) != "" {
+		stateTopic := entity.GetStateTopic(client)
+		if stateTopic != "" {
 			state, err := entity.GetState(client)
 			if err != nil {
 				m.logger.Error("Entity manager get state error",
@@ -100,19 +115,20 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 					"entity", entity,
 					"error", err,
 				)
+				return
 			}
-			entityStorage, ok := m.entityStates[entity]
+			entityStorage, ok := m.entityStates[stateTopic]
 			if ok {
 				storageState, ok := entityStorage[client.Mac]
 				if ok && storageState == state {
 					continue
 				}
 			}
-			if m.entityStates[entity] == nil {
-				m.entityStates[entity] = make(map[string]string)
+			if m.entityStates[stateTopic] == nil {
+				m.entityStates[stateTopic] = make(map[string]string)
 			}
-			m.entityStates[entity][client.Mac] = state
-			m.mqtt.SendMessage(entity.GetStateTopic(client), state, false)
+			m.entityStates[stateTopic][client.Mac] = state
+			m.mqtt.SendMessage(stateTopic, state, false)
 		}
 	}
 }
@@ -120,15 +136,17 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 func (m *EntityManager) runClient(client dto.Client) {
 	for _, entity := range m.entities {
 		e := entity
-		if e.GetCommandTopic(client) != "" {
-			go m.runClientEntityConsumer(e, client)
-		}
+		go m.runClientEntityConsumer(e, client)
 		go m.sendDiscovery(client, e)
 	}
 }
 
 func (m *EntityManager) runClientEntityConsumer(e Entity, client dto.Client) {
-	ch := m.mqtt.Subscribe(e.GetCommandTopic(client))
+	commandTopic := e.GetCommandTopic(client)
+	if commandTopic == "" {
+		return
+	}
+	ch := m.mqtt.Subscribe(commandTopic)
 	for {
 		message := <-ch
 		err := e.Consume(client, message)
@@ -149,7 +167,7 @@ func (m *EntityManager) sendDiscovery(client dto.Client, e Entity) {
 		m.logger.Error("Entity manager update error while sending discovery message",
 			"error", err,
 			"client", client,
-			"Entity", fmt.Sprintf("%v", e),
+			"entity", fmt.Sprintf("%v", e),
 		)
 	}
 }
