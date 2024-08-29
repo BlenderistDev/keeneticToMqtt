@@ -362,7 +362,7 @@ func TestEntityManager_Run(t *testing.T) {
 				tt.entities(),
 				tt.clientList(),
 				tt.mqtt(),
-				2*time.Millisecond,
+				100*time.Millisecond,
 				tt.logger(),
 			)
 
@@ -373,12 +373,12 @@ func TestEntityManager_Run(t *testing.T) {
 			go func() {
 				stopChan = manager.Run()
 			}()
-			time.Sleep(time.Millisecond * 3)
+			time.Sleep(time.Millisecond * 120)
 
 			go func() {
 				stopChan <- struct{}{}
 			}()
-			time.Sleep(time.Millisecond * 3)
+			time.Sleep(time.Millisecond * 100)
 			return
 		})
 	}
