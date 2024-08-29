@@ -2,6 +2,7 @@ package homeassistant
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"keeneticToMqtt/internal/dto"
@@ -34,13 +35,14 @@ type logger interface {
 
 // EntityManager entity manager for keenetic client entities in home assistant.
 type EntityManager struct {
-	entities        []Entity
-	clientList      clientList
-	mqtt            mqtt
-	pollingInterval time.Duration
-	logger          logger
-	clients         map[string]dto.Client
-	entityStates    map[string]map[string]string
+	entities          []Entity
+	clientList        clientList
+	mqtt              mqtt
+	pollingInterval   time.Duration
+	logger            logger
+	clients           map[string]dto.Client
+	entityStates      map[string]map[string]string
+	entityStatesMutex sync.RWMutex
 }
 
 // NewEntityManager creates new EntityManager.
@@ -117,6 +119,7 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 				)
 				return
 			}
+			m.entityStatesMutex.Lock()
 			entityStorage, ok := m.entityStates[stateTopic]
 			if ok {
 				storageState, ok := entityStorage[client.Mac]
@@ -128,6 +131,7 @@ func (m *EntityManager) updateEntitiesState(client dto.Client) {
 				m.entityStates[stateTopic] = make(map[string]string)
 			}
 			m.entityStates[stateTopic][client.Mac] = state
+			m.entityStatesMutex.Unlock()
 			m.mqtt.SendMessage(stateTopic, state, false)
 		}
 	}
