@@ -5,15 +5,19 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 
-	"keeneticToMqtt/internal/clients/keenetic/auth"
+	"keeneticToMqtt/internal/logger"
 )
 
+const clientName = "keenetic"
+
+// Keenetic client for keenetic.
 type Keenetic struct {
 	host, login, password string
 	client                *http.Client
 }
 
-func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, password string, log *slog.Logger) *Keenetic {
+// NewKeenetic creates new Keenetic.
+func NewKeenetic(auth authClient, cookiejar *cookiejar.Jar, host, login, password string, log *slog.Logger) *Keenetic {
 	keenetic := &Keenetic{
 		host:     host,
 		login:    login,
@@ -27,11 +31,12 @@ func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, passwor
 		proxied: t,
 		auth:    auth,
 	}
-	//rt = &logger.RoundTripper{
-	//	Proxied:    rt,
-	//	Log:        log,
-	//	ClientName: "keenetic",
-	//}
+
+	rt = &logger.RoundTripper{
+		Proxied:    rt,
+		Log:        log,
+		ClientName: clientName,
+	}
 
 	client := &http.Client{
 		Transport: rt,
@@ -42,6 +47,7 @@ func NewKeenetic(auth *auth.Auth, cookiejar *cookiejar.Jar, host, login, passwor
 	return keenetic
 }
 
+// Do request.
 func (k *Keenetic) Do(req *http.Request) (*http.Response, error) {
 	return k.client.Do(req)
 }
