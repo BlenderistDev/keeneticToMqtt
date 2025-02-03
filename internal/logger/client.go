@@ -40,6 +40,6 @@ func (rt RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		rt.Log.Error(fmt.Sprintf("Error %s read body response: %s", rt.ClientName, err.Error()))
 	}
 
-	rt.Log.Error(fmt.Sprintf("Sending request %s: %v Body: %s Response: Code: %v Headers: %v Body: %s Time: %s", rt.ClientName, req, reqBody, res.StatusCode, res.Header, body, runTime))
+	rt.Log.Info(fmt.Sprintf("Sending request %s: %v Body: %s Response: Code: %v Headers: %v Body: %s Time: %s", rt.ClientName, req, reqBody, res.StatusCode, res.Header, body, runTime))
 	return res, err
 }
