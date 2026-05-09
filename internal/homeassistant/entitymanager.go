@@ -68,6 +68,7 @@ func NewEntityManager(
 func (m *EntityManager) Run() chan struct{} {
 	done := make(chan struct{})
 	ticker := time.NewTicker(m.pollingInterval)
+	homeassistantStatusCh := m.mqtt.Subscribe("homeassistant/status")
 
 	go func() {
 		for {
@@ -75,13 +76,30 @@ func (m *EntityManager) Run() chan struct{} {
 			case <-done:
 				m.logger.Info("shutdown entitymanager")
 				return
-			case _ = <-ticker.C:
+			case <-ticker.C:
 				m.update()
+			case status := <-homeassistantStatusCh:
+				if status == "online" {
+					m.handleHomeAssistantOnline()
+				}
 			}
 		}
 	}()
 
 	return done
+}
+
+func (m *EntityManager) handleHomeAssistantOnline() {
+	m.logger.Info("Home Assistant online, resending discovery and states")
+	m.entityStatesMutex.Lock()
+	m.entityStates = make(map[string]map[string]string)
+	m.entityStatesMutex.Unlock()
+
+	for _, client := range m.clients {
+		for _, entity := range m.entities {
+			go m.sendDiscovery(client, entity)
+		}
+	}
 }
 
 func (m *EntityManager) update() {
@@ -109,31 +127,35 @@ func (m *EntityManager) update() {
 func (m *EntityManager) updateEntitiesState(client dto.Client) {
 	for _, entity := range m.entities {
 		stateTopic := entity.GetStateTopic(client)
-		if stateTopic != "" {
-			state, err := entity.GetState(client)
-			if err != nil {
-				m.logger.Error("Entity manager get state error",
-					"client", client,
-					"entity", entity,
-					"error", err,
-				)
-				return
-			}
-			m.entityStatesMutex.Lock()
-			entityStorage, ok := m.entityStates[stateTopic]
-			if ok {
-				storageState, ok := entityStorage[client.Mac]
-				if ok && storageState == state {
-					continue
-				}
-			}
-			if m.entityStates[stateTopic] == nil {
-				m.entityStates[stateTopic] = make(map[string]string)
-			}
-			m.entityStates[stateTopic][client.Mac] = state
-			m.entityStatesMutex.Unlock()
-			m.mqtt.SendMessage(stateTopic, state, false)
+		if stateTopic == "" {
+			continue
 		}
+
+		state, err := entity.GetState(client)
+		if err != nil {
+			m.logger.Error("Entity manager get state error",
+				"client", client,
+				"entity", entity,
+				"error", err,
+			)
+			return
+		}
+
+		m.entityStatesMutex.Lock()
+		entityStorage, ok := m.entityStates[stateTopic]
+		if ok {
+			storageState, ok := entityStorage[client.Mac]
+			if ok && storageState == state {
+				m.entityStatesMutex.Unlock()
+				continue
+			}
+		}
+		if m.entityStates[stateTopic] == nil {
+			m.entityStates[stateTopic] = make(map[string]string)
+		}
+		m.entityStates[stateTopic][client.Mac] = state
+		m.entityStatesMutex.Unlock()
+		m.mqtt.SendMessage(stateTopic, state, false)
 	}
 }
 

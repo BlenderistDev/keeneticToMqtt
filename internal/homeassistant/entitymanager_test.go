@@ -40,6 +40,8 @@ func TestEntityManager_Run(t *testing.T) {
 	}
 
 	someErr := errors.New("some error")
+	haStatusCh := make(chan string)
+
 	tests := []struct {
 		name         string
 		entities     func() []Entity
@@ -64,6 +66,7 @@ func TestEntityManager_Run(t *testing.T) {
 			},
 			mqtt: func() mqtt {
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				mqtt.EXPECT().SendMessage(stateTopic, state, false)
 				return mqtt
 			},
@@ -93,6 +96,7 @@ func TestEntityManager_Run(t *testing.T) {
 			},
 			mqtt: func() mqtt {
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				return mqtt
 			},
 			logger: func() logger {
@@ -123,6 +127,7 @@ func TestEntityManager_Run(t *testing.T) {
 			},
 			mqtt: func() mqtt {
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				return mqtt
 			},
 			logger: func() logger {
@@ -152,6 +157,7 @@ func TestEntityManager_Run(t *testing.T) {
 			},
 			mqtt: func() mqtt {
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				return mqtt
 			},
 			logger: func() logger {
@@ -187,6 +193,7 @@ func TestEntityManager_Run(t *testing.T) {
 			mqtt: func() mqtt {
 				ch := make(chan string)
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				mqtt.EXPECT().SendMessage(stateTopic, state, false)
 				mqtt.EXPECT().SendMessage(stateTopicNew, stateNew, false)
 				mqtt.EXPECT().Subscribe(commandTopicNew).Return(ch)
@@ -228,6 +235,7 @@ func TestEntityManager_Run(t *testing.T) {
 					ch <- command
 				}()
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				mqtt.EXPECT().SendMessage(stateTopicNew, stateNew, false)
 				mqtt.EXPECT().Subscribe(commandTopicNew).Return(ch)
 				return mqtt
@@ -267,6 +275,7 @@ func TestEntityManager_Run(t *testing.T) {
 					ch <- command
 				}()
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				mqtt.EXPECT().SendMessage(stateTopicNew, stateNew, false)
 				mqtt.EXPECT().Subscribe(commandTopicNew).Return(ch)
 				return mqtt
@@ -301,6 +310,7 @@ func TestEntityManager_Run(t *testing.T) {
 			},
 			mqtt: func() mqtt {
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				mqtt.EXPECT().SendMessage(stateTopic, state, false)
 				mqtt.EXPECT().SendMessage(stateTopicNew, stateNew, false)
 				return mqtt
@@ -336,6 +346,7 @@ func TestEntityManager_Run(t *testing.T) {
 			mqtt: func() mqtt {
 				ch := make(chan string)
 				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haStatusCh)
 				mqtt.EXPECT().SendMessage(stateTopic, state, false)
 				mqtt.EXPECT().SendMessage(stateTopicNew, stateNew, false)
 				mqtt.EXPECT().Subscribe(commandTopicNew).Return(ch)
@@ -352,6 +363,45 @@ func TestEntityManager_Run(t *testing.T) {
 				mac: clientDto,
 			},
 			entityStates: map[string]map[string]string{},
+		},
+		{
+			name: "homeassistant online resets state cache and resends discovery",
+			entities: func() []Entity {
+				entity := mock_homeassistant.NewMockEntity(ctrl)
+				entity.EXPECT().GetStateTopic(clientDto).Return(stateTopic)
+				entity.EXPECT().GetState(clientDto).Return(storageState, nil)
+				entity.EXPECT().SendDiscoveryMessage(clientDto).Return(nil)
+				return []Entity{entity}
+			},
+			clientList: func() clientList {
+				clientList := mock_homeassistant.NewMockclientList(ctrl)
+				clientList.EXPECT().GetClientList().Return(clients, nil)
+				return clientList
+			},
+			mqtt: func() mqtt {
+				haCh := make(chan string)
+				go func() {
+					time.Sleep(time.Millisecond * 30)
+					haCh <- "online"
+				}()
+				mqtt := mock_homeassistant.NewMockmqtt(ctrl)
+				mqtt.EXPECT().Subscribe("homeassistant/status").Return(haCh)
+				mqtt.EXPECT().SendMessage(stateTopic, storageState, false)
+				return mqtt
+			},
+			logger: func() logger {
+				logger := mock_homeassistant.NewMocklogger(ctrl)
+				logger.EXPECT().Info("Entity manager update", "clients", clients)
+				logger.EXPECT().Info("Home Assistant online, resending discovery and states")
+				logger.EXPECT().Info("shutdown entitymanager")
+				return logger
+			},
+			clients: map[string]dto.Client{
+				mac: clientDto,
+			},
+			entityStates: map[string]map[string]string{
+				stateTopic: {mac: storageState},
+			},
 		},
 	}
 
